@@ -1,0 +1,20 @@
+import os
+
+Import('env')
+
+# add flags for GLIB library
+env.PrependENVPath("PATH", os.environ['PATH'])
+
+if 'PKG_CONFIG_PATH' in os.environ:
+    env.PrepenENVPath('PKG_CONFIG_PATH', os.environ['PKG_CONFIG_PATH'])
+env.ParseConfig("pkg-config --cflags --libs glib-2.0")
+
+srcfiles = ['util.c', 'wig.c', 'txtfile.c', 'aln.c',
+            'memutil.c', 'err.c', 'bedgraph.c', 'chr.c', 'seqcoord.c',
+            'nuc.c', 'seq.c', 'fasta.c','xbf.c', 'config.c', 'stat.c']
+
+libgenome = env.SharedLibrary('genome', srcfiles)
+
+Return('libgenome')
+
+
