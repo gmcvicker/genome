@@ -1,1 +1,10 @@
+# python bytecode
 *.pyc
+
+# C object files and shared libraries
+*.os
+*.o
+*.so
+
+# Scons files
+.sconsign.dblite
