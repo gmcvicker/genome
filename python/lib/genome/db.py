@@ -1,81 +1,27 @@
-
 import os, sys, re
 import tables
-import genome.seq
 
+from genome.track import Track
 import genome.trackstat
-from genome.db_adaptor.chrom_adp import ChromosomeAdaptor
-
-class Track(object):
-    def __init__(self, name, path, mode="r"):
-        self.name = name
-        self.path = path
-        self.h5f = tables.openFile(path, mode)
-
-    def __enter__(self):
-        sys.stderr.write("Track %s opened\n" % self.name)
-        return self
-    
-    def __exit__(self, exc_type, exc_value, traceback):
-        sys.stderr.write("Cleaning up track %s\n" % self.name)
-        self.h5f.close()
-        return False
-    
-    def get_array(self, chrom):
-        """returns an PyTables ArrayNode of continuous data for a particular
-        chromosome"""
-        node_name = "/" + str(chrom)
-        array_node = self.h5f.getNode(node_name)
-        return array_node
-
-
-    def close(self):
-        self.h5f.close()
-
-    
-    
-    def __get_np_slice(self, array_node, start, end):
-        """Helper function, gets a numpy array slice corresponding
-        to the provided coordinates from a PyTable ArrayNode"""
-        
-        if start > end:
-            raise ValueError("start (%d) must be <= end (%d)")
-
-        if (start is None) and (end is None):
-            return array_node[:]
-
-        if start < 1:
-            raise ValueError("start must be >= 1")
-        
-        if start is None:
-            start_idx = 0
-        else:
-            start_idx = start-1
-            
-        if end is None:
-            end_idx = array_node.shape[0]
-        else:
-            if end > array_node.shape[0]:
-                raise ValueError("end (%d) is greater than chromosome "
-                                 "length (%d)" % (end, array_node.shape[0]))
-            end_idx = end
-        
-        return array_node[start_idx:end_idx]
-
-
-    def get_nparray(self, chrom, start=None, end=None):
-        array_node = self.get_array(chrom)
-        return self.__get_np_slice(array_node, start, end)
-
-
-    def get_seq_str(self, chrom, start=None, end=None):
-        vals = self.get_nparray(chrom, start, end)
-        return genome.seq.from_nparray(vals)
-
-
-
+from genome.chrom import Chromosome
 
 class GenomeDB():
+    """This object provides a simple database interface overtop
+    a set of directories containing HDF5 files. This is loosely based on
+    Michael Hoffman's Genomedata package (see
+    http://bioinformatics.oxfordjournals.org/content/26/11/1458.abstract
+    or http://noble.gs.washington.edu/proj/genomedata/).
+
+    The base directory for the database is obtained from the GENOME_DB
+    environment variable or can specified as a constructor
+    argument. Each HDF5 file under the base directory is considered
+    a "Track", which can be accessed using a genome.track.Track object.
+    These are typically opened for reading using the get_track method
+    and can be created using the create_track method.
+
+    For convenience, the GenomeDB class also provides several methods
+    for obtaining the list of chromosomes that are in the database."""
+
     def __init__(self, path=None):
         if path is None:
             if 'GENOME_DB' in os.environ:
@@ -108,6 +54,8 @@ class GenomeDB():
 
 
     def get_track_path(self, track_name):
+        """Returns the filesystem path to the HDF5 file with the
+        given track name"""
         if track_name.startswith("/"):
             track_name = track_name[1:]
         if track_name.endswith(".h5"):
@@ -118,6 +66,7 @@ class GenomeDB():
 
         
     def has_track(self, track_name):
+        """Returns True if a track with the specified name exists"""
         track_path = self.get_track_path(track_name)
 
         if os.path.exists(track_path):
@@ -127,6 +76,9 @@ class GenomeDB():
 
         
     def open_track(self, track_name, mode="r"):
+        """Returns an open Track of the specified name. By default the
+        track is opened in read mode, but other modes can be
+        specified."""
         track_path = self.get_track_path(track_name)
 
         if not os.path.exists(track_path):
@@ -134,15 +86,13 @@ class GenomeDB():
         
         return Track(track_name, track_path, mode)
 
-    
+
     def get_track_stat(self, track):
-        """Returns statistics for entire track"""        
+        """Returns a TrackStat object containing statistics for an
+        entire track (mean, max, sum, etc.)"""
         return genome.trackstat.get_stats(self, track)
 
         
-
-
-
     def list_tracks(self, subdir=None):
         """returns a list of existing track names"""
         if subdir is None:
@@ -173,6 +123,8 @@ class GenomeDB():
 
 
     def create_track(self, track_name):
+        """Creates a new HDF5 file in write mode, and returns
+        a Track object wrapped around it."""
         track_path = self.get_track_path(track_name)
 
         if os.path.exists(track_path):
@@ -189,27 +141,73 @@ class GenomeDB():
         return Track(name=track_name, path=track_path, mode="w")
 
 
+
     def get_chromosome_dict(self):
-        """Convenience function to retrieve chromosomes in the database,
-        returned in a dictionary keyed on chromosome name"""
-        chrom_track = self.open_track("chromosome")
-        chrom_adp = ChromosomeAdaptor(chrom_track)
+        """Returns a dictionary of all chromosomes in the database,
+        keyed on chromosome name"""
+        chrom_list = self.get_chromosomes(get_rand=True, get_auto=True,
+                                          get_sex=True, get_x=True,
+                                          get_hap=True, get_mito=True)
         
-        return chrom_adp.fetch_name_dict()
+        chrom_dict = {}
+        for chrom in chrom_list:
+            chrom_dict[chrom.name] = chrom
+
+        return chrom_dict
+        
 
 
     def get_chromosomes(self, get_rand=False, get_auto=True, get_sex=True,
                         get_x=True, get_y=False, get_hap=False,
                         get_mito=False):
-        """Convenience function to return chromosomes in the database"""
+        """Returns a list of Chromosome objects from the
+        database. Optional flags can be used to specify the subset of
+        chromosomes that are returned.  By default the 22 autosomes
+        and chrY are retrieved (but chrY, the mitochondrial
+        chromosome, alternate haplotypes, and 'random' chromosomes are
+        not)"""        
+        chrom_list = []
+        chrom = None
 
         chrom_track = self.open_track("chromosome")
-        chrom_adp = ChromosomeAdaptor(chrom_track)
-        
-        return chrom_adp.fetch_by_type(get_rand=get_rand, get_auto=get_auto,
-                                       get_sex=get_sex, get_x=get_x,
-                                       get_y=get_y, get_hap=get_hap,
-                                       get_mito=get_mito)
+
+        flags = {'is_rand' : get_rand,
+                 'is_auto' : get_auto,
+                 'is_sex' : get_sex,
+                 'is_x' : get_x,
+                 'is_y' : get_y,
+                 'is_hap' : get_hap,
+                 'is_mito' :  get_mito}
+
+        conditions = []
+        for k, v in flags.items():
+            if not v:
+                # don't get this chromosome type
+                conditions.append("(%s == False)" % k)
+
+        row_iter = None
+        if len(conditions) > 0:
+            query = " & ".join(conditions)
+            row_iter = chrom_track.h5f.root.chromosome.where(query)
+        else:
+            row_iter = chrom_track.h5f.root.chromosome
+
+        for row in row_iter:
+            chrom = Chromosome(idnum=row['idnum'],
+                               name=row['name'],
+                               length=row['length'],
+                               is_auto=row['is_auto'],
+                               is_hap=row['is_hap'],
+                               is_mito=row['is_mito'],
+                               is_sex=row['is_sex'],
+                               is_x=row['is_x'],
+                               is_y=row['is_y'])
+
+            chrom_list.append(chrom)
+
+        chrom_track.close()
+
+        return chrom_list
     
 
 
@@ -217,7 +215,10 @@ class GenomeDB():
         """Convenience function, returns a list of chromosome objects
         that are obtained from parsing command line args that may be
         in any one of the following forms 'chr2' or '3', or '1-22'"""
-
+        if isinstance(args, str):
+            # if we were given a string, put it in a list
+            args = [args]
+        
         if len(args) < 1:
             raise ValueError("expected at least one value, got 0")
         
@@ -256,9 +257,9 @@ class GenomeDB():
         return chrom_list
 
 
+
     def get_chromosome(self, name):
-        """Convenience function, retrieves a single chromosome by name"""
-        chrom_track = self.open_track("chromosome")
-        chrom_adp = ChromosomeAdaptor(chrom_track)
-        return chrom_adp.fetch_by_name(name).next()
+        """Retrieves a single chromosome by name"""
+        chrom_dict = self.get_chromosome_dict()
+        return chrom_dict[name]
 
