@@ -8,7 +8,7 @@ from util import txtfile
 
 class Chromosome(tables.IsDescription):
     idnum = tables.Int32Col()
-    name = tables.StringCol(16)
+    name = tables.StringCol(32)
     length = tables.Int32Col()
     is_sex = tables.BoolCol(dflt=False)
     is_auto = tables.BoolCol(dflt=True)
