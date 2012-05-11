@@ -30,6 +30,14 @@ class Track(object):
         sys.stderr.write("Cleaning up track %s\n" % self.name)
         self.h5f.close()
         return False
+
+
+    def has_chromosome(self, chrom):
+        """Returns True if this track contains a particular chromosome,
+        False otherwise"""
+        chrom_str = str(chrom)
+        return chrom_str in self.h5f.root
+
     
     def get_array(self, chrom):
         """returns an PyTables ArrayNode for a particular chromosome"""
