@@ -147,7 +147,8 @@ class GenomeDB():
         keyed on chromosome name"""
         chrom_list = self.get_chromosomes(get_rand=True, get_auto=True,
                                           get_sex=True, get_x=True,
-                                          get_hap=True, get_mito=True)
+                                          get_y=True, get_hap=True,
+                                          get_mito=True)
         
         chrom_dict = {}
         for chrom in chrom_list:
