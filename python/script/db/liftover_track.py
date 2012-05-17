@@ -98,18 +98,29 @@ class Chain(object):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("from_db", help="path to genome_db, which "
+    parser.add_argument("from_db", metavar="FROM_DB",
+                        help="Path to genome_db, which "
                         "is on assembly we want to copy track FROM")
 
-    parser.add_argument("to_db", help="path to new genome_db, which "
+    parser.add_argument("to_db", metavar="TO_DB",
+                        help="Path to new genome_db, which "
                         "is on assembly we want to copy track TO")
 
-    parser.add_argument("liftover_file", help="path to liftover chain file "
-                        "describing the coordinate conversion between "
+    parser.add_argument("liftover_file", metavar="LIFTOVER_FILE",
+                        help="Path to UCSC chain file that "
+                        "describes the coordinate conversion between "
                         "assemblies")
     
-    parser.add_argument("track", help="name of track we want "
+    parser.add_argument("track", metavar="TRACK", help="Name of track we want "
                         "to convert from old assembly to new assembly")
+
+    parser.add_argument("--rev_track", metavar="REV_TRACK",
+                        default=None,
+                        help="If this is argument is specified then two "
+                        "tracks are lifted over at the same time--one for each "
+                        "strand. In regions where the assemblies differ in "
+                        "orientation, the data from TRACK and REV_TRACK are"
+                        "swapped")
 
     args = parser.parse_args()
 
@@ -155,8 +166,8 @@ def create_carray(from_track, from_chrom, to_track, to_chrom):
 
 
 
-def copy_data(from_track, from_chrom, from_start, from_end,
-              to_track, to_chrom, to_start, to_end, ori):
+def copy_data(from_track, rev_from_track, from_chrom, from_start, from_end,
+              to_track, rev_to_track, to_chrom, to_start, to_end, ori):
     """Copy data from one track to another using the provided
     coordinates."""
 
@@ -170,25 +181,45 @@ def copy_data(from_track, from_chrom, from_start, from_end,
 
     if to_track.has_chromosome(to_chrom):
         to_array = to_track.get_array(to_chrom)
+
+        if rev_to_track:
+            rev_to_array = rev_to_track.get_array(to_chrom)
     else:
-        # need to create this region on new track
+        # need to create this region on new tracks
         to_array = create_carray(from_track, from_chrom, to_track, to_chrom)
 
+        if rev_to_track:
+            rev_to_array = create_carray(rev_from_track, from_chrom,
+                                         rev_to_track, to_chrom)
+    
     # retrieve values from 'from' track
     from_vals = from_track.get_nparray(from_chrom, from_start, from_end)
 
-    # need to flip the values if the orientation is flipped
-    if ori == -1:
-        from_vals = from_vals[::-1]
+    if rev_to_track:
+        rev_from_vals = rev_from_track.get_nparray(from_chrom, from_start,
+                                                   from_end)
+        if ori == -1:
+            # swap values from fwd/rev tracks (and reverse direction)
+            tmp = rev_from_vals[::-1]
+            rev_from_vals = from_vals[::-1]
+            from_vals = tmp
 
-    # copy values to 'to' track
-    to_array[(to_start-1):to_end] = from_vals
+        to_array[(to_start-1):to_end] = from_vals
+        rev_to_array[(to_start-1):to_end] = rev_from_vals
+    else:
+        # need to flip the values if the orientation is flipped
+        if ori == -1:
+            from_vals = from_vals[::-1]
+        
+        # copy values to 'to' track
+        to_array[(to_start-1):to_end] = from_vals
 
 
     
 
 
-def liftover_data(chain_file, from_gdb, to_gdb, from_track, to_track):
+def liftover_data(chain_file, from_gdb, to_gdb, from_track, rev_from_track,
+                  to_track, rev_to_track):
     # read chromosomes from both databases
     from_chrom_dict = from_gdb.get_chromosome_dict()
     to_chrom_dict = to_gdb.get_chromosome_dict()
@@ -231,8 +262,9 @@ def liftover_data(chain_file, from_gdb, to_gdb, from_track, to_track):
                 to_start = to_end - size + 1
 
             # now liftover the data data for this block
-            copy_data(from_track, chain.from_coord.chrom, from_start, from_end,
-                      to_track, chain.to_coord.chrom, to_start, to_end, chain.ori)
+            copy_data(from_track, rev_from_track, chain.from_coord.chrom,
+                      from_start, from_end, to_track, rev_to_track,
+                      chain.to_coord.chrom, to_start, to_end, chain.ori)
             
             if len(words) == 3:
                 # there are gaps between blocks.
@@ -284,15 +316,28 @@ def main():
 
     # create new track with same name in new database
     to_track = to_gdb.create_track(args.track)
+
+    if args.rev_track:
+        # there are separate forward and reverse strand tracks
+        rev_from_track = from_gdb.open_track(args.rev_track)
+        rev_to_track = to_gdb.create_track(args.rev_track)
+    else:
+        rev_from_track = None
+        rev_to_track = None
+        
                         
-    liftover_data(args.liftover_file, from_gdb, to_gdb,
-                  from_track, to_track)
+    liftover_data(args.liftover_file, from_gdb, to_gdb, 
+                  from_track, rev_from_track, to_track, rev_to_track)
         
     from_track.close()
-
     to_track.h5f.flush()
     to_track.close()
 
+    if args.rev_track:
+        rev_from_track.close()
+        rev_to_track.h5f.flush()
+        rev_to_track.close()
+    
     sys.stderr.write("done\n")
     
 
