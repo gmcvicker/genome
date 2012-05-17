@@ -75,7 +75,7 @@ def parse_args():
         
     parser.add_argument("--rev_track", metavar="REV_TRACK", action="store",
                         default=None,
-                        help="if specified, reverse fragment midpoints "
+                        help="if specified, reverse fragment read depths "
                         "are stored in REV_TRACK and forward midpoints "
                         "are stored in TRACK; otherwise all midpoints are "
                         "stored in TRACK")
@@ -118,9 +118,6 @@ def main():
     
     for chrom in gdb.get_chromosomes():
         sys.stderr.write("%s\n" % chrom.name)
-
-        fwd_dup_counts = {}
-        rev_dup_counts = {}
         
         fwd_carray = create_carray(fwd_track, chrom)
 
