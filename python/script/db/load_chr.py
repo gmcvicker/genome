@@ -1,12 +1,13 @@
 import sys
+import gzip
+import re
 import tables
+import argparse
 
 import genome.db
+import genome.chrom
 
-# from genome import config
-from util import txtfile
-
-class Chromosome(tables.IsDescription):
+class ChromDesc(tables.IsDescription):
     idnum = tables.Int32Col()
     name = tables.StringCol(32)
     length = tables.Int32Col()
@@ -19,41 +20,134 @@ class Chromosome(tables.IsDescription):
     is_x = tables.BoolCol(dflt=False)
 
 
-def load_txt_file(filename, chrom_table):
-    f = open(filename)
-    chrom = chrom_table.row
+def load_chromosomes(chrom_list, chrom_table):
+    row = chrom_table.row
 
-    for row in txtfile.read_rows(f):
-        chrom['idnum'] = int(row["ID"])
-        chrom['name'] = row['name']
-        chrom['length'] = int(row['length'])
-        chrom['is_auto'] = row['is_auto'] == "1"
-        chrom['is_sex'] = row['is_sex'] == "1"
-        chrom['is_rand'] = row['is_rand'] == "1"
-        chrom['is_hap'] = row['is_hap'] == "1"
-        chrom['is_mito'] = row['is_mito'] == "1"
-        chrom['is_y'] = row['is_y'] == "1"
-        chrom['is_x'] = row['is_x'] == "1"
+    for chrom in chrom_list:
+        row['idnum'] = chrom.idnum
+        row['name'] = chrom.name
+        row['length'] = chrom.length
+        row['is_auto'] = chrom.is_auto
+        row['is_sex'] = chrom.is_sex
+        row['is_rand'] = chrom.is_rand
+        row['is_hap'] = chrom.is_hap
+        row['is_mito'] = chrom.is_mito
+        row['is_y'] = chrom.is_y
+        row['is_x'] = chrom.is_x                
+        row.append()
+
+    chrom_table.flush()
+
+
+
+def chrom_key(chrom):
+    """Returns a key for sorting chromosomes based on their name"""
+    m = re.match(r"^chr(\d+)", chrom.name)    
+    if m:
+        # make sure autosomes are sorted numerically by padding with
+        # leading 0s
+        num = m.groups()[0]
+
+        if len(num) < 3:
+            name = ("0" * (3-len(num))) + num
+        else:
+            name = num
+    else:
+        # otherwise just sort lexigraphically
+        name = chrom.name
+
+    # first take non-haplo, non-rand, non-sex chromosomes, then
+    # sort by name
+    return (chrom.is_hap, chrom.is_rand, chrom.is_mito, chrom.is_sex, name)
+
+
+
+def parse_chromosomes(filename):
+    if filename.endswith(".gz"):
+        f = gzip.open(filename)
+    else:
+        f = open(filename)
+
+    chrom_list = []
+    
+    for line in f:
+        words = line.rstrip().split()
+
+        if len(words) < 2:
+            raise ValueError("expected at least two columns per line\n")
         
-        chrom.append()
+        chrom = genome.chrom.Chromosome(name=words[0], length=words[1])
+        chrom_list.append(chrom)
 
-    chrom_table.flush()    
+        # determine whether this is autosome, sex or mitochondrial chrom
+        if re.match('^chr(\d+)', chrom.name):
+            chrom.is_auto=True
+        elif re.match("^chr[W-Zw-z]", chrom.name):
+            chrom.is_sex = True
+        elif chrom.name.lower().startswith("chrm"):
+            chrom.is_mito = True
+        elif chrom.name.lower().startswith("chrun"):
+            chrom.is_rand = True
+        else:
+            sys.stderr.write("WARNING: could not determine chromosome type "
+                             "(autosome, sex, mitochondrial) from name "
+                             "'%s'. Assuming 'random'\n" % chrom.name)
+            chrom.is_rand = True
+
+        if "rand" in chrom.name:
+            # random chromosome
+            chrom.is_rand = True
+
+        if "hap" in chrom.name:
+            # alt haplotype chromosome
+            chrom.is_hap = True
+
+    chrom_list.sort(key=chrom_key)
+
+    idnum = 1
+    for chrom in chrom_list:
+        chrom.idnum = idnum
+        idnum += 1
+
+        sys.stderr.write("%s\n" % chrom.name)
+
     f.close()
+
+    return chrom_list
+
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--assembly", default='hg18',
+                        help="assembly to create chromosome table for"
+                        " (e.g. hg18)")
+
+    parser.add_argument("chrom_file",
+                        help="path to UCSC chromInfo.txt.gz file")
+
+    return parser.parse_args()
+    
 
 
 def main():
-    if not len(sys.argv) == 2:
-        sys.stderr.write("usage: %s <chrom_txt_file>\n" % sys.argv[0])
-        exit(2)
+    args = parse_args()
 
-    gdb = genome.db.GenomeDB()
-    
+    sys.stderr.write("parsing input file %s\n" % args.chrom_file)
+    chrom_list = parse_chromosomes(args.chrom_file)
+
+    gdb = genome.db.GenomeDB(assembly=args.assembly)
+
+    sys.stderr.write("creating chromosome table for %s\n" %
+                     args.assembly)
     track = gdb.create_track("chromosome")
 
-    chrom_table = track.h5f.createTable("/", 'chromosome', Chromosome,
+    chrom_table = track.h5f.createTable("/", 'chromosome', ChromDesc,
                                         "chromosomes")
 
-    load_txt_file(sys.argv[1], chrom_table)
+    sys.stderr.write("storing chromosomes in table\n")
+    load_chromosomes(chrom_list, chrom_table)
 
     track.h5f.flush()
     track.close()
