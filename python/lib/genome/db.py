@@ -22,7 +22,7 @@ class GenomeDB():
     For convenience, the GenomeDB class also provides several methods
     for obtaining the list of chromosomes that are in the database."""
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, assembly='hg18'):
         if path is None:
             if 'GENOME_DB' in os.environ:
                 path = os.environ['GENOME_DB']
@@ -34,12 +34,15 @@ class GenomeDB():
             # add trailing '/' if non exists
             path = path + "/"
 
+        # add assembly to the end of the path
+        path = path + assembly + "/" 
+
         if not os.path.exists(path):
             raise ValueError("database path does not exist: %s" % path)
 
         if not os.path.isdir(path):
             raise ValueError("database path is not directory: %s" % path)
-                
+        
         self.path = path
         
     
