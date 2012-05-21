@@ -5,6 +5,8 @@ from genome.track import Track
 import genome.trackstat
 from genome.chrom import Chromosome
 
+DEFAULT_ASSEMBLY = "hg18"
+
 class GenomeDB():
     """This object provides a simple database interface overtop
     a set of directories containing HDF5 files. This is loosely based on
@@ -22,7 +24,7 @@ class GenomeDB():
     For convenience, the GenomeDB class also provides several methods
     for obtaining the list of chromosomes that are in the database."""
 
-    def __init__(self, path=None, assembly='hg18'):
+    def __init__(self, path=None, assembly=None):
         if path is None:
             if 'GENOME_DB' in os.environ:
                 path = os.environ['GENOME_DB']
@@ -31,19 +33,33 @@ class GenomeDB():
                                  "GENOME_DB environment variable not set")
 
         if not path.endswith("/"):
-            # add trailing '/' if non exists
+            # add trailing '/' if none exists
             path = path + "/"
 
-        # add assembly to the end of the path
-        path = path + assembly + "/" 
-
         if not os.path.exists(path):
-            raise ValueError("database path does not exist: %s" % path)
+            raise IOError("database path does not exist: %s" % path)
 
-        if not os.path.isdir(path):
-            raise ValueError("database path is not directory: %s" % path)
+        if assembly is None:
+            if 'GENOME_ASSEMBLY' in os.environ:
+                assembly = os.environ['GENOME_ASSEMBLY']
+            else:
+                sys.stderr.write("no assembly specified and GENOME_ASSEMBLY "
+                                 "environment variable not set--using %s "
+                                 "by default\n" % DEFAULT_ASSEMBLY)
+                assembly = DEFAULT_ASSEMBLY
+
+        # add assembly to the end of the path
+        assembly_path = path + assembly + "/" 
+
+        if not os.path.exists(assembly_path):
+            raise IOError("assembly '%s' does not exist under "
+                          "database %s" % (assembly, path))
+
+        if not os.path.isdir(assembly_path):
+            raise IOError("assembly path is not directory: %s" %
+                          assembly_path)
         
-        self.path = path
+        self.path = assembly_path
         
     
     def __enter__(self):
@@ -166,8 +182,8 @@ class GenomeDB():
                         get_mito=False):
         """Returns a list of Chromosome objects from the
         database. Optional flags can be used to specify the subset of
-        chromosomes that are returned.  By default the 22 autosomes
-        and chrY are retrieved (but chrY, the mitochondrial
+        chromosomes that are returned.  By default the autosomes
+        and chrX are retrieved (but chrY, the mitochondrial
         chromosome, alternate haplotypes, and 'random' chromosomes are
         not)"""        
         chrom_list = []

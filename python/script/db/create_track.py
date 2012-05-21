@@ -71,6 +71,10 @@ def parse_options(args):
                                  "txtfile"),
                         default="wiggle", help="format of input files")
 
+    parser.add_argument("-a", "--assembly", default="hg18",
+                        help='genome assembly to create new '
+                        'track for (e.g. hg18)')
+
     parser.add_argument("-p", "--pos_idx", action="store",
                         dest="pos_idx", type=int, default=-1,
                         help="index of position column in the "
@@ -106,7 +110,7 @@ def parse_options(args):
 
 
 def main(options):
-    gdb = genome.db.GenomeDB()
+    gdb = genome.db.GenomeDB(assembly=options.assembly)
 
     chrom_dict = gdb.get_chromosome_dict()
 

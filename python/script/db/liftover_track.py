@@ -98,18 +98,16 @@ class Chain(object):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("from_db", metavar="FROM_DB",
-                        help="Path to genome_db, which "
-                        "is on assembly we want to copy track FROM")
+    parser.add_argument("from_assembly", metavar="FROM_ASSEMBLY",
+                        help="Assembly to copy track FROM (e.g. hg18)")
 
-    parser.add_argument("to_db", metavar="TO_DB",
-                        help="Path to new genome_db, which "
-                        "is on assembly we want to copy track TO")
+    parser.add_argument("to_assembly", metavar="TO_ASSEMBLY",
+                        help="Assembly to copy track TO (e.g. hg19)")
 
     parser.add_argument("liftover_file", metavar="LIFTOVER_FILE",
                         help="Path to UCSC chain file that "
                         "describes the coordinate conversion between "
-                        "assemblies")
+                        "assemblies (e.g. hg18ToHg19.over.chain.gz)")
     
     parser.add_argument("track", metavar="TRACK", help="Name of track we want "
                         "to convert from old assembly to new assembly")
@@ -119,7 +117,7 @@ def parse_args():
                         help="If this is argument is specified then two "
                         "tracks are lifted over at the same time--one for each "
                         "strand. In regions where the assemblies differ in "
-                        "orientation, the data from TRACK and REV_TRACK are"
+                        "orientation, the data from TRACK and REV_TRACK are "
                         "swapped")
 
     args = parser.parse_args()
@@ -308,8 +306,8 @@ def liftover_data(chain_file, from_gdb, to_gdb, from_track, rev_from_track,
 def main():
     args = parse_args()
 
-    from_gdb = genome.db.GenomeDB(args.from_db)
-    to_gdb = genome.db.GenomeDB(args.to_db)
+    from_gdb = genome.db.GenomeDB(assembly=args.from_assembly)
+    to_gdb = genome.db.GenomeDB(assembly=args.to_assembly)
 
     # get the original track
     from_track = from_gdb.open_track(args.track)

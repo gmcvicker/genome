@@ -79,14 +79,16 @@ def parse_chromosomes(filename):
         chrom = genome.chrom.Chromosome(name=words[0], length=words[1])
         chrom_list.append(chrom)
 
+        lc_name = chrom.name.lower()
+
         # determine whether this is autosome, sex or mitochondrial chrom
-        if re.match('^chr(\d+)', chrom.name):
+        if re.match('^chr(\d+)', lc_name):
             chrom.is_auto=True
-        elif re.match("^chr[W-Zw-z]", chrom.name):
+        elif re.match("^chr[W-Zw-z]", lc_name):
             chrom.is_sex = True
-        elif chrom.name.lower().startswith("chrm"):
+        elif lc_name.startswith("chrm"):
             chrom.is_mito = True
-        elif chrom.name.lower().startswith("chrun"):
+        elif lc_name.startswith("chrun") or lc_name.startswith("chrur"):
             chrom.is_rand = True
         else:
             sys.stderr.write("WARNING: could not determine chromosome type "
