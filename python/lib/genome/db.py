@@ -164,11 +164,7 @@ class GenomeDB():
     def get_chromosome_dict(self):
         """Returns a dictionary of all chromosomes in the database,
         keyed on chromosome name"""
-        chrom_list = self.get_chromosomes(get_rand=True, get_auto=True,
-                                          get_sex=True, get_x=True,
-                                          get_y=True, get_hap=True,
-                                          get_mito=True)
-        
+        chrom_list = self.get_all_chromosomes()        
         chrom_dict = {}
         for chrom in chrom_list:
             chrom_dict[chrom.name] = chrom
@@ -180,12 +176,11 @@ class GenomeDB():
     def get_chromosomes(self, get_rand=False, get_auto=True, get_sex=True,
                         get_x=True, get_y=False, get_hap=False,
                         get_mito=False):
-        """Returns a list of Chromosome objects from the
-        database. Optional flags can be used to specify the subset of
-        chromosomes that are returned.  By default the autosomes
-        and chrX are retrieved (but chrY, the mitochondrial
-        chromosome, alternate haplotypes, and 'random' chromosomes are
-        not)"""        
+        """Returns a filtered list of Chromosomes from the
+        database. Optional flags specify the subset of Chromosomes
+        that are returned. By default the 22 autosomes and chrX are
+        retrieved (but chrY, the mitochondrial chromosome, alternate
+        haplotypes, and 'random' chromosomes are not)"""
         chrom_list = []
         chrom = None
 
@@ -229,6 +224,32 @@ class GenomeDB():
 
         return chrom_list
     
+
+    def get_all_chromosomes(self):
+        """Returns an unfiltered list of all of the chromosomes in the
+        database"""
+        chrom_list = []
+        chrom = None
+
+        chrom_track = self.open_track("chromosome")
+
+        for row in chrom_track.h5f.root.chromosome:
+            chrom = Chromosome(idnum=row['idnum'],
+                               name=row['name'],
+                               length=row['length'],
+                               is_auto=row['is_auto'],
+                               is_hap=row['is_hap'],
+                               is_mito=row['is_mito'],
+                               is_sex=row['is_sex'],
+                               is_x=row['is_x'],
+                               is_y=row['is_y'])
+
+            chrom_list.append(chrom)
+
+        return chrom_list
+        
+
+        
 
 
     def get_chromosomes_from_args(self, args):
