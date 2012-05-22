@@ -1,21 +1,35 @@
 
 import sys
 import numpy as np
+import argparse
 
 import genome.db
-
 import genome.trackstat as trackstat
 
-def main():
-    gdb = genome.db.GenomeDB()
 
-    if len(sys.argv) != 2:
-        sys.stderr.write("usage: %s <track_name>\n" % sys.argv[0])
-        exit(2)
+def parse_args():
+    parser = argparse.ArgumentParser(description="Saves a number of "
+                                     "statistics (max, min, mean, etc.) "
+                                     "as track attributes. These can be "
+                                     "rapidly retrieved by other programs.")
 
-    track_name = sys.argv[1]
+    parser.add_argument("--assembly", metavar="ASSEMBLY", default="hg18",
+                        help="name of assembly (e.g. hg18)")
 
-    track = gdb.open_track(track_name, "a")
+    parser.add_argument("track_name", metavar="TRACK_NAME",
+                        help="name of track")
+    
+    args = parser.parse_args()
+
+    return args
+
+
+def main():    
+    args = parse_args()
+
+    gdb = genome.db.GenomeDB(assembly=args.assembly)
+
+    track = gdb.open_track(args.track_name, "a")
     track_stat = trackstat.set_stats(gdb, track)
     sys.stderr.write("combined %s\n" % str(track_stat))
     track.close()
