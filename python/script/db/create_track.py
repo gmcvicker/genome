@@ -23,17 +23,17 @@ ZLIB_FILTER = tables.Filters(complevel=1, complib='zlib')
 
 def extract_chrom_name(filename):
     # does filename contain a random chromosome?
-    matches = re.findall(r"(chr[0-9XYM]+\_random)", filename)
+    matches = re.findall(r"(chr[0-9WXYM]+[A|B|L|R]?\_random)", filename)
     if matches:
         return matches[0]
 
     # is this an alt-haplotype chromosome?
-    matches = re.findall(r"(chr[0-9XYM]+\_\w+\_hap\d+)", filename)
+    matches = re.findall(r"(chr[0-9XYM]+[A|B|L|R]?\_\w+\_hap\d+)", filename)
     if matches:
         return matches[0]
 
     # check for vanilla chromosome name
-    matches = re.findall(r"(chr[0-9XYM]+)", filename)
+    matches = re.findall(r"(chr[0-9WXYM]+[A|B|L|R]?)[\.\_]", filename)
     if matches:
         return matches[0]
 
