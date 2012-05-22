@@ -176,6 +176,10 @@ def parse_args():
     
     group.add_argument("--paired_end", action="store_true",
                        help="reads are paired-end")
+
+    parser.add_argument('--assembly', help="assembly that reads "
+                       "were mapped to (e.g. hg18)",
+                       default="hg18")
     
     parser.add_argument("--min_frag_size", action="store",
                         type=int, default=117,
