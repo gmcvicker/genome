@@ -58,7 +58,8 @@ class GenomeDB():
         if not os.path.isdir(assembly_path):
             raise IOError("assembly path is not directory: %s" %
                           assembly_path)
-        
+
+        self.assembly = assembly
         self.path = assembly_path
         
     
@@ -245,6 +246,8 @@ class GenomeDB():
                                is_y=row['is_y'])
 
             chrom_list.append(chrom)
+
+        chrom_track.close()
 
         return chrom_list
         
