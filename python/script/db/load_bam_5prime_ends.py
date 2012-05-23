@@ -71,6 +71,9 @@ def add_read_counts(chrom, fwd_array, rev_array, bam_filename):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+
+    parser.add_argument("--assembly", "genome assembly that reads "
+                        "were mapped to (e.g. hg18)", default=hg18)
     
     parser.add_argument("fwd_track", action="store",
                         metavar="FWD_TRACK",
@@ -102,7 +105,7 @@ def main():
     args = parse_args()
     
     # create a database track
-    gdb = genome.db.GenomeDB()
+    gdb = genome.db.GenomeDB(assembly=args.assembly)
 
     fwd_track = gdb.create_track(args.fwd_track)
     rev_track = gdb.create_track(args.rev_track)
