@@ -148,7 +148,10 @@ class GenomeDB():
         track_path = self.get_track_path(track_name)
 
         if os.path.exists(track_path):
-            raise ValueError("track %s already exists" % track_path)
+            raise IOError("Could not create track '%s' because it "
+                          "already exists.\nYou must remove "
+                          "the file '%s' before this track can be created."
+                          % (track_name, track_path))
 
         # create parent directories as needed
         dir_names = track_name.split("/")[:-1]
