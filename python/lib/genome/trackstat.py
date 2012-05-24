@@ -110,6 +110,10 @@ def get_stats(gdb, track, chrom=None):
         node_name = "/%s" % chrom.name
         if node_name in track.h5f:
             node = track.h5f.getNode("/%s" % chrom.name)
+            if 'n' not in node.attrs:
+                raise ValueError("Stat attributes are not set for track %s"
+                                 % track.name)
+
             chrom_stat.n = node.attrs.n
             chrom_stat.n_nan = node.attrs.n_nan
             chrom_stat.min = node.attrs.min
