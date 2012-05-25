@@ -1,6 +1,8 @@
+#!/usr/bin/python
 
 import sys
 import numpy as np
+import argparse
 
 import genome.db
 
@@ -26,38 +28,54 @@ def get_seq_stats(track, chrom):
     n_n = node.attrs.n_n
     n_def = node.attrs.n_def
 
-    sys.stdout.write("%s len:%d n_a:%d n_c:%d n_g:%d n_t:%d n_n:%d "
+    sys.stdout.write("%s len:%d n_a:%d n_c:%d n_g:%d n_t:%d n_n:%d n_def:%d "
                      "first_def:%d last_def:%d\n" %
                      (chrom.name, chrom.length, n_a, n_c, n_g, n_t, n_n,
+                      n_def, 
                       node.attrs.first_def_idx + 1,
                       node.attrs.last_def_idx + 1))
 
-    return (n_a, n_c, n_g, n_t)
+    return (n_a, n_c, n_g, n_t, n_def)
     
     
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Write sequence stats "
+                                     "to stdout (need to be "
+                                     "pre-computed using "
+                                     "set_seq_track_stats.py)")
+
+    parser.add_argument("--assembly", default='hg18',
+                        help="assembly to get stats for"
+                        " (e.g. hg18)")
+
+    parser.add_argument("--track", default="seq",
+                        help="name of sequence track to get stats for")
+    
+
+    return parser.parse_args()
+
 
 def main():
-    gdb = genome.db.GenomeDB()
+    args = parse_args()
+    
+    gdb = genome.db.GenomeDB(assembly=args.assembly)
 
-    if len(sys.argv) != 2:
-        sys.stderr.write("usage: %s <track_name>\n" % sys.argv[0])
-        exit(2)
+    track = gdb.open_track(args.track)
 
-    track_name = sys.argv[1]
-
-    track = gdb.open_track(track_name)
-
-    ttl_a = ttl_c = ttl_t = ttl_g = 0
+    ttl_a = ttl_c = ttl_t = ttl_g = ttl_def = 0
     
     for chrom in gdb.get_chromosomes():
-        (n_a, n_c, n_t, n_g) = get_seq_stats(track, chrom)
+        (n_a, n_c, n_t, n_g, n_def) = get_seq_stats(track, chrom)
+
         ttl_a += n_a
         ttl_c += n_c
         ttl_g += n_g
         ttl_t += n_t
+        ttl_def += n_def
 
-    sys.stdout.write("total n_a:%d n_c:%d n_g:%d n_t:%d\n" %
-                     (ttl_a, ttl_c, ttl_g, ttl_t))
+    sys.stdout.write("total n_a:%d n_c:%d n_g:%d n_t:%d n_def:%d\n" %
+                     (ttl_a, ttl_c, ttl_g, ttl_t, ttl_def))
     
     track.close()
 
