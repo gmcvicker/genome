@@ -88,16 +88,17 @@ def add_pe_mnase_mids(chrom, fwd_array, rev_array, bam_filename,
             dup_counts = fwd_dup_counts
             array = fwd_array
 
-        # check if this read is a duplicate
-        key = "%d:%d" % (pos, isize)
-        if key in dup_counts:
-            dup_counts[key] += 1
-        else:
-            dup_counts[key] = 1
+        if dup_counts:
+            # check if this read is a duplicate
+            key = "%d:%d" % (pos, isize)
+            if key in dup_counts:
+                dup_counts[key] += 1
+            else:
+                dup_counts[key] = 1
 
-        if dup_counts[key] > max_dups:
-            # skip this read, too many duplicates
-            continue
+            if dup_counts[key] > max_dups:
+                # skip this read, too many duplicates
+                continue
         
         # read looks good...
         # how different is this from expected size?
@@ -128,7 +129,8 @@ def add_pe_mnase_mids(chrom, fwd_array, rev_array, bam_filename,
 
 
 def add_se_mnase_mids(chrom, fwd_array, rev_array, bam_filename,
-                      min_frag_len, max_frag_len):
+                      min_frag_len, max_frag_len, 
+                      fwd_dup_counts, rev_dup_counts, max_dups):
     samfile = pysam.Samfile(bam_filename, "rb")
 
     count = 0
@@ -159,10 +161,27 @@ def add_se_mnase_mids(chrom, fwd_array, rev_array, bam_filename,
         if dyad_pos > chrom.length:
             dyad_pos = chrom.length
 
+
         if read.is_reverse:
-            rev_array[dyad_pos-1] += 1
+            dup_counts = rev_dup_counts
+            array = rev_array
         else:
-            fwd_array[dyad_pos-1] += 1
+            dup_counts = fwd_dup_counts
+            array = fwd_array
+            
+        if dup_counts:
+            # check if this read is a duplicate
+            key = "%d" % pos
+            if key in dup_counts:
+                dup_counts[key] += 1
+            else:
+                dup_counts[key] = 1
+
+            if dup_counts[key] > max_dups:
+                # skip this read, too many duplicates
+                continue
+
+        arra[dyad_pos-1] += 1
         
 
 
@@ -171,11 +190,16 @@ def parse_args():
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     
+    
     group.add_argument("--single_end", action="store_true",
                        help="reads are single-end")
     
     group.add_argument("--paired_end", action="store_true",
                        help="reads are paired-end")
+
+    parser.add_argument("--chrom", default=None, metavar="CHROMOSOME",
+                        help="only import reads for specified chromosome or "
+                        "range of chromosomes")
 
     parser.add_argument('--assembly', help="assembly that reads "
                        "were mapped to (e.g. hg18)",
@@ -197,9 +221,10 @@ def parse_args():
                         "stored in TRACK")
 
     parser.add_argument("--max_duplicates", action="store", type=int,
-                        default=255, help="maximum number of duplicate fragments "
-                        " (same strand, start, fragment size) to store midpoints for")
-
+                        default=None, help="maximum number of duplicate "
+                        "fragments (same strand, start, fragment "
+                        "size) to store midpoints for")
+    
     parser.add_argument("track", action="store",
                         metavar="TRACK",
                         help="name of track to store midpoints in")
@@ -242,12 +267,21 @@ def main():
         rev_track = gdb.create_track(args.rev_track)
     else:
         rev_track = None
+
+    if args.chrom:
+        chromosomes = gdb.get_chromosomes_from_args([args.chrom])
+    else:
+        chromosomes = gdb.get_chromosomes()
     
-    for chrom in gdb.get_chromosomes():
+    for chrom in chromosomes:
         sys.stderr.write("%s\n" % chrom.name)
 
-        fwd_dup_counts = {}
-        rev_dup_counts = {}
+        if args.max_duplicates:
+            fwd_dup_counts = {}
+            rev_dup_counts = {}
+        else:
+            fwd_dup_counts = None
+            rev_dup_counts = None
         
         fwd_carray = create_carray(fwd_track, chrom)
 
@@ -276,11 +310,13 @@ def main():
             if args.paired_end:
                 add_pe_mnase_mids(chrom, fwd_array, rev_array, bam_filename,
                                   args.min_frag_size, args.max_frag_size,
-                                  fwd_dup_counts, rev_dup_counts, args.max_duplicates)
+                                  fwd_dup_counts, rev_dup_counts,
+                                  args.max_duplicates)
             else:
                 add_se_mnase_mids(chrom, fwd_array, rev_array, bam_filename,
                                   args.min_frag_size, args.max_frag_size,
-                                  fwd_dup_counts, rev_dup_counts, args.max_duplicates)
+                                  fwd_dup_counts, rev_dup_counts,
+                                  args.max_duplicates)
                 
             sys.stderr.write("\n")
 
