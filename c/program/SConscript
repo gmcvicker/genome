@@ -1,0 +1,10 @@
+
+Import('env', 'libgenome')
+
+env = env.Clone()
+
+env.MergeFlags({'LIBS' : ['genome', 'z']})
+
+prog = env.Program('split_wig_chrs', ['split_wig_chrs.c'])
+
+Depends(prog, libgenome)

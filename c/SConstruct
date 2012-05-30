@@ -11,13 +11,13 @@ Export('env')
 
 libgenome = SConscript(['lib/SConscript'])
 
-env.MergeFlags({'LIBPATH' : ['#/genome'],
-                'CPPPATH' : ['#/genome']})
+env.MergeFlags({'LIBPATH' : ['#/lib'],
+                'CPPPATH' : ['#/lib']})
 
 Export('libgenome')
 
 
 # build programs
-# SConscript(['program/SConscript'])
+SConscript(['program/SConscript'])
 
 
