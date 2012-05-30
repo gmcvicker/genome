@@ -68,9 +68,9 @@ def combine_tracks(gdb, combined_track, tracks, dtype=None):
 
 
 
-def create_combined_tracks(combined_track_name, track_names,
+def create_combined_tracks(combined_track_name, track_names, assembly,
                            dtype=None):
-    gdb = genome.db.GenomeDB()
+    gdb = genome.db.GenomeDB(assembly=assembly)
 
     track_list = []
     for track_name in track_names:
@@ -96,6 +96,8 @@ def parse_args():
                         choices=("uint8", "uint16"), default="uint8",
                         help="datatype of combined track")
 
+    parser.add_argument('--assembly', help="assembly to use", default="hg18")
+
     parser.add_argument("combined_track", action="store",
                         help="name of track to store combined counts in")
     
@@ -111,7 +113,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     
-    create_combined_tracks(args.combined_track, args.tracks,
+    create_combined_tracks(args.combined_track, args.tracks, args.assembly,
                            np.dtype(args.dtype))
         
     
