@@ -258,7 +258,7 @@ def main():
     args = parse_args()
     
     # create a database track
-    gdb = genome.db.GenomeDB()
+    gdb = genome.db.GenomeDB(assembly=args.assembly)
 
     fwd_track = gdb.create_track(args.track)
 
