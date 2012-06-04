@@ -94,7 +94,7 @@ def set_stats(gdb, track):
 
 
 
-def get_stats(gdb, track, chrom=None):
+def get_stats(gdb, track, chrom=None, verbose=False):
     """Retrieves stats that are stored as attributes. By default
     stats are returned for the whole track, but stats for a
     specific chromosome can also be requested"""
@@ -120,7 +120,8 @@ def get_stats(gdb, track, chrom=None):
             chrom_stat.max = node.attrs.max
             chrom_stat.sum = node.attrs.sum
 
-            # sys.stderr.write("%s %s\n" % (str(chrom), str(chrom_stat)))
+            if verbose:
+                sys.stderr.write("%s %s\n" % (str(chrom), str(chrom_stat)))
             combined.add(chrom_stat)
 
     return combined

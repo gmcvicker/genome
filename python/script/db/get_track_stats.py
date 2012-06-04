@@ -17,6 +17,10 @@ def parse_args():
     parser.add_argument("--assembly", metavar="ASSEMBLY", default="hg18",
                         help="name of assembly (e.g. hg18)")
 
+    parser.add_argument("--verbose", action="store_true",
+                        help="print extra info to stderr "
+                        "(stats for each chromosome)")
+
     parser.add_argument("track_name", metavar="TRACK_NAME",
                         help="name of track")
     
@@ -32,7 +36,7 @@ def main():
 
     track = gdb.open_track(args.track_name)
     
-    track_stat = trackstat.get_stats(gdb, track)
+    track_stat = trackstat.get_stats(gdb, track, verbose=args.verbose)
     sys.stderr.write("combined %s\n" % str(track_stat))
 
     track.close()
