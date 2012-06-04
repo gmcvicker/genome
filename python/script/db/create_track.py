@@ -23,21 +23,31 @@ ZLIB_FILTER = tables.Filters(complevel=1, complib='zlib')
 
 def extract_chrom_name(filename):
     # does filename contain a random chromosome?
-    matches = re.findall(r"(chr[0-9WXYM]+[A|B|L|R]?\_random)", filename)
+    matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?\_random)", filename)
     if matches:
         return matches[0]
 
     # is this an alt-haplotype chromosome?
-    matches = re.findall(r"(chr[0-9XYM]+[A|B|L|R]?\_\w+\_hap\d+)", filename)
+    matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?\_\w+\_hap\d+)", filename)
+    if matches:
+        return matches[0]
+
+    # is this a fly heterochromatin chromosome?
+    matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?Het)", filename)
+    if matches:
+        return matches[0]
+
+    # is this a fly 'extra' chromosome?
+    matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?extra)", filename)
     if matches:
         return matches[0]
 
     # check for vanilla chromosome name
-    matches = re.findall(r"(chr[0-9WXYM]+[A|B|L|R]?)[\.\_]", filename)
+    matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?)[\.\_]?", filename)
     if matches:
         return matches[0]
 
-    raise ValueError("could not parse chromosome name from filename %s" %
+    raise ValueError("could not parse chromosome name from filename '%s'" %
                      filename)
 
     
