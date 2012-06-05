@@ -7,7 +7,6 @@
 #include "nuc.h"
 #include "seq.h"
 #include "seqcoord.h"
-#include "fasta.h"
 #include "util.h"
 #include "memutil.h"
 #include "err.h"

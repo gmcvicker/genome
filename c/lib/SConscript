@@ -11,7 +11,7 @@ env.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
 srcfiles = ['util.c', 'wig.c', 'txtfile.c', 'aln.c',
             'memutil.c', 'err.c', 'bedgraph.c', 'chr.c', 'seqcoord.c',
-            'nuc.c', 'seq.c', 'fasta.c','xbf.c', 'config.c']
+            'nuc.c', 'seq.c', 'xbf.c', 'config.c']
 
 libgenome = env.SharedLibrary('genome', srcfiles)
 
