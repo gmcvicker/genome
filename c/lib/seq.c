@@ -62,7 +62,8 @@ static int read_fasta_header(Seq *seq, gzFile f) {
       /* we've reached the end of the file */
       return 0;
     }
-    my_err("%s:%d: expected fasta record to start with '>' not \\%d", c);
+    my_err("%s:%d: expected fasta record to start with '>' not \\%d", 
+	   __FILE__, __LINE__, c);
   }
 
   /* fill in header */
