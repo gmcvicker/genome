@@ -2,6 +2,7 @@
 import sys
 import numpy as np
 
+import argparse
 import genome.db
 
 import genome.trackstat as trackstat
@@ -43,19 +44,33 @@ def set_seq_stats(track, chrom):
         
     
     
+def parse_args():
+    parser = argparse.ArgumentParser(description="Computes sequence stats "
+                                     "and sets them as attributes on "
+                                     "track so that they can be "
+                                     "retrieved rapidly (e.g. using "
+                                     "get_seq_track_stats.py)")
 
-def main():
-    gdb = genome.db.GenomeDB()
+    parser.add_argument("--assembly", default='hg18',
+                        help="assembly to set stats for"
+                        " (e.g. hg18)")
 
-    if len(sys.argv) != 2:
-        sys.stderr.write("usage: %s <track_name>\n" % sys.argv[0])
-        exit(2)
+    parser.add_argument("--track", default="seq",
+                        help="name of sequence track to set stats for")
+    
 
-    track_name = sys.argv[1]
+    return parser.parse_args()
 
-    track = gdb.open_track(track_name, "a")
 
-    for chrom in gdb.get_chromosomes():
+
+def main():    
+    args = parse_args()
+
+    gdb = genome.db.GenomeDB(assembly=args.assembly)
+
+    track = gdb.open_track(args.track, "a")
+
+    for chrom in gdb.get_all_chromosomes():
         sys.stderr.write("%s\n" % chrom)
         set_seq_stats(track, chrom)
     
