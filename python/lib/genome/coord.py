@@ -2,6 +2,7 @@
 from chrom import Chromosome
 import math
 import sys
+import gzip
 
 import numpy as np
 
