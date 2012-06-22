@@ -70,7 +70,7 @@ def set_stats(gdb, track):
     be opened in append mode."""
     combined = TrackStats()
 
-    for chrom in gdb.get_chromosomes():
+    for chrom in gdb.get_all_chromosomes():
         node_name = "/%s" % chrom.name
         if node_name in track.h5f:
             chrom_stat = TrackStats()
@@ -106,7 +106,7 @@ def get_stats(gdb, track, chrom=None, verbose=False):
     else:
         chrom_list = [x for x in gdb.get_chromosomes(get_x=False)]
     
-    for chrom in gdb.get_chromosomes():
+    for chrom in gdb.get_all_chromosomes():
         node_name = "/%s" % chrom.name
         if node_name in track.h5f:
             node = track.h5f.getNode("/%s" % chrom.name)
