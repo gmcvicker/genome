@@ -19,15 +19,24 @@ class Feature(tables.IsDescription):
 
 def load_bed_file(filename, chrom_dict, chrom_tab_dict, default_name=".",
                   start_offset=1):
-    
-    if filename.endswith(".gz"):
+
+    if filename is None:
+        # use stdin
+        f = sys.stdin
+    elif filename.endswith(".gz"):
         f = gzip.open(filename, "rb")
     else:
         f = open(filename, "r")
 
+    round_floats = False
+
     # load the tables with features
     count = 0
     for line in f:
+        if line.startswith("#") or line.startswith(";"):
+            # skip comment lines
+            continue
+
         words = line.rstrip().split()
         
         chrom_name = words[0]
@@ -76,7 +85,23 @@ def load_bed_file(filename, chrom_dict, chrom_tab_dict, default_name=".",
             name = default_name
 
         if len(words) > 5:
-            score = int(words[4])
+            try:
+                score = int(words[4])
+            except ValueError:
+                try:
+                    float_score = float(words[4])
+                    if not round_floats:
+                        sys.stderr.write("WARNING: rounding floating point "
+                                         "scores to integers\n")
+                        round_floats = True
+                    score = int(round(float_score))
+                except ValueError:
+                    sys.stderr.write("WARNING: could not parse score '%s' as "
+                                     "float or integer\n" % words[4])
+                    score = 0
+                    
+                    
+
         else:
             score = 0
 
@@ -91,8 +116,6 @@ def load_bed_file(filename, chrom_dict, chrom_tab_dict, default_name=".",
         count += 1
 
     sys.stdout.write("stored %d features\n" % count)
-    
-    f.close()
 
 
 
@@ -115,8 +138,10 @@ def main():
                         help="value to add to start coordinate")
     parser.add_argument("track_name", help="name of track to store coords in")
 
-    parser.add_argument("filenames", help="BED-like files to read coords from",
-                        nargs='+')
+    parser.add_argument("filename",
+                        help="BED-like file(s) to read coords from "
+                        "(stdin is used if no file specified)",
+                        nargs='*')
 
     options = parser.parse_args()
 
@@ -124,10 +149,16 @@ def main():
 
     chrom_dict = gdb.get_chromosome_dict()
     track, chrom_tab_dict = create_track(gdb, chrom_dict, options.track_name)
-    
-    for filename in options.filenames:
-        load_bed_file(filename, chrom_dict, chrom_tab_dict,
+
+    if len(options.filename) == 0 or \
+        (len(options.filename) == 1 and options.filename[0] == '-'):
+        # use stdin
+        load_bed_file(None, chrom_dict, chrom_tab_dict,
                       start_offset=options.start_offset)
+    else:
+        for filename in options.filename:
+            load_bed_file(filename, chrom_dict, chrom_tab_dict,
+                          start_offset=options.start_offset)
 
     # flush tables
     for tab in chrom_tab_dict.values():
