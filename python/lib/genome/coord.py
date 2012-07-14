@@ -264,6 +264,37 @@ def get_coord_overlaps(coord, coord_list, use_strand=False):
     return overlap_list[0]
 
 
+
+
+def coords_from_sites(chrom, sites):
+    """Creates a list of Coord objects from a list of sites.
+    Sites that are adjacent are combined into a single coordinate.
+    For example the position list [1,2,10,11,12,13,20] would give
+    a list of coordinates spanning the following ranges
+    [1-2, 10-13, 20-20]."""
+    start = None
+    end = None
+
+    coords = []
+
+    for site in sites:
+        if start is None:
+            # start first block
+            end = start = site
+        else:
+            if (site - end) != 1:
+                # write out previous block
+                coords.append(Coord(chrom, start, end))
+                # start new block
+                start = site
+            # record end of current block
+            end = site
+
+    if end:
+        # finish last block
+        coords.append(Coord(chrom, start+1, end+1))
+
+    return coords
     
 
 
