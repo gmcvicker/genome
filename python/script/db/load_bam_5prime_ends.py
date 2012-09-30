@@ -27,13 +27,36 @@ def create_carray(track, chrom):
 
 
 
+
+def get_sam_iter(samfile, chrom):
+    try:
+        sam_iter = samfile.fetch(reference=chrom.name,
+                                 start=1, end=chrom.length)
+    except ValueError:        
+        # could not find chromosome, try stripping leading 'chr'
+        # E.g. for drosophila, sometimes 'chr2L' is used but
+        # othertimes just '2L' is used. Annoying!
+        chrom_name = chrom.name.replace("chr", "")
+        sys.stderr.write("WARNING: %s does not exist in BAM file, "
+                         "trying %s instead\n" % (chrom.name, chrom_name))
+
+        try:
+            sam_iter = samfile.fetch(reference=chrom_name,
+                                     start=1, end=chrom.length)
+        except ValueError:
+            sys.stderr.write("WARNING: %s does not exist in BAM file, "
+                             "skipping chromosome\n" % chrom_name)
+            sam_iter = iter([])
+
+    return sam_iter
+    
+
 def add_read_counts(chrom, fwd_array, rev_array, bam_filename):
     samfile = pysam.Samfile(bam_filename, "rb")
 
     count = 0
-    
-    for read in samfile.fetch(reference=chrom.name, start=1,
-                              end=chrom.length):
+        
+    for read in get_sam_iter(samfile, chrom):
         count += 1
         if count > 100000:
             sys.stderr.write(".")
@@ -72,8 +95,8 @@ def add_read_counts(chrom, fwd_array, rev_array, bam_filename):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--assembly", "genome assembly that reads "
-                        "were mapped to (e.g. hg18)", default=hg18)
+    parser.add_argument("--assembly", help="genome assembly that reads "
+                        "were mapped to (e.g. hg18)", default="hg18")
     
     parser.add_argument("fwd_track", action="store",
                         metavar="FWD_TRACK",
@@ -110,7 +133,7 @@ def main():
     fwd_track = gdb.create_track(args.fwd_track)
     rev_track = gdb.create_track(args.rev_track)
     
-    for chrom in gdb.get_chromosomes():
+    for chrom in gdb.get_all_chromosomes():
         sys.stderr.write("%s\n" % chrom.name)
         
         fwd_carray = create_carray(fwd_track, chrom)

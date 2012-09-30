@@ -147,7 +147,7 @@ def count_midpoints(filename, chrom_arrays, chrom_dict,
 
         if midpoint < 1 or midpoint > read1.chrom.length:
             sys.stderr.write("WARNING: fragment midpoint %d is outside "
-                             "of %s range 1-%d" % (midpoint,
+                             "of %s range 1-%d\n" % (midpoint,
                                                    read1.chrom.name,
                                                    read1.chrom.length))
 
@@ -161,14 +161,22 @@ def count_midpoints(filename, chrom_arrays, chrom_dict,
             
             carray[midpoint-1] += 1
         else:
-            sys.stderr.write("WARNING: midpoint count at %s:%d "
-                             "exceeds maximum value of %d"
-                             % (read1.chrom.name, midpoint, MAX_VAL))
+            pass
+            # sys.stderr.write("WARNING: midpoint count at %s:%d "
+            #                  "exceeds maximum value of %d\n"
+            #                  % (read1.chrom.name, midpoint, MAX_VAL))
     
     f.close()
     sys.stderr.write("\n")
     sys.stderr.write("total_count: %d\n" % total_count)
 
+    for chrom_name in chrom_arrays.keys():
+        carray = chrom_arrays[chrom_name]
+        sys.stderr.write("%s: sites with max val (%d): %d\n" % 
+                         (chrom_name, MAX_VAL, np.sum(carray[:] == MAX_VAL)))
+
+
+    
     
 def parse_args():
     parser = argparse.ArgumentParser()
