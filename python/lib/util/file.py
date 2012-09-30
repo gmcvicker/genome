@@ -1,5 +1,26 @@
 import subprocess
 import os
+import gzip
+
+
+def check_open(filename, mode="r"):
+    """Tries to open file and return filehandle. Takes into account
+    that file may be gzipped. Raises exception if mode is write and 
+    file already exists."""
+    if mode.startswith("w") and os.path.exists(filename):
+        raise IOError("file %s already exists" % filename)
+
+    if filename.endswith(".gz"):
+        if mode == "w":
+            mode = "wb"
+        elif mode == "r":
+            mode = "rb"
+
+        return gzip.open(filename, mode)
+
+    return open(filename, mode)
+
+
 
 def count_lines(filename):
 
