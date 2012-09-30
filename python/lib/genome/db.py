@@ -127,18 +127,16 @@ class GenomeDB():
         for filename in filenames:
             if filename.startswith("."):
                 continue
-            if os.path.isdir(path + filename):
-                # recursively add tracks to this one
-                
+            if filename.endswith(".h5"):
+                track_name = filename[:-3]
+                if subdir:
+                    track_names.append(subdir + "/" + track_name)
+                else:
+                    track_names.append(track_name)
+            elif os.path.isdir(path + filename):
+                # recursively add tracks to this one                
                 new_subdir = subdir + "/" + filename if subdir else filename
                 track_names.extend(self.list_tracks(subdir=new_subdir))
-            else:
-                if filename.endswith(".h5"):
-                    track_name = filename[:-3]
-                    if subdir:
-                        track_names.append(subdir + "/" + track_name)
-                    else:
-                        track_names.append(track_name)
         return track_names
 
 
