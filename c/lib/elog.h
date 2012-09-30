@@ -42,7 +42,7 @@
  * ln(x + y) = ln(x) + ln(x + y) - ln(x)
  *           = ln(x) + ln((x +y) / x)
  *           = ln(x) + ln(1 + y/x)
- *           = ln(x) + ln(1 + e^ln(x/y))
+ *           = ln(x) + ln(1 + e^ln(y/x))
  */
 #define elnsum(lnx, lny) \
   (((lnx) == LOG_ZERO || (lny) == LOG_ZERO) ?	\
