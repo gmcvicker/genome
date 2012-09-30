@@ -32,6 +32,22 @@ def extract_chrom_name(filename):
     if matches:
         return matches[0]
 
+    # is this a 'gl' chromosome
+    matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?\_gl\d+\_random)", 
+                         filename)
+    if matches:
+        return matches[0]
+
+    matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?\_gl\d+)", filename)
+    if matches:
+        return matches[0]
+
+    matches = re.findall(r"(chrUn\_gl\d+)", filename)
+    if matches:
+        return matches[0]
+
+    
+
     # is this a fly heterochromatin chromosome?
     matches = re.findall(r"(chr[0-9UWXYM]+[A|B|L|R]?Het)", filename)
     if matches:
