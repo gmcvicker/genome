@@ -9,10 +9,11 @@ import genome.trackstat as trackstat
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Report track "
+    parser = argparse.ArgumentParser(description="Write track "
                                      "statistics (max, min, mean, etc.) "
-                                     "that have already been stored as "
-                                     "attributes.")
+                                     "to stdout. Stats must already have "
+                                     "been stored as attributes using "
+                                     "set_track_stats.py")
 
     parser.add_argument("--assembly", metavar="ASSEMBLY", default="hg18",
                         help="name of assembly (e.g. hg18)")
@@ -37,7 +38,7 @@ def main():
     track = gdb.open_track(args.track_name)
     
     track_stat = trackstat.get_stats(gdb, track, verbose=args.verbose)
-    sys.stderr.write("combined %s\n" % str(track_stat))
+    sys.stdout.write("combined %s\n" % str(track_stat))
 
     track.close()
 
