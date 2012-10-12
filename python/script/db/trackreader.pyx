@@ -26,6 +26,11 @@ cdef extern from "txtfile.h":
     char *txtfile_read_int8(char *filename, long chr_len,
                             int pos_idx, int val_idx)
 
+    short *txtfile_read_int16(char *filename, long chr_len,
+                              int pos_idx, int val_idx)
+
+
+    
 cdef extern from "bedgraph.h":
     short *bedgraph_read_int16(char *filename, long chr_len)
     float *bedgraph_read_float32(char *filename, long chr_len)
@@ -154,12 +159,28 @@ def read_bedgraph_float32(filename, chrom_len):
 
 
 
-def read_txtfile(filename, chrom_len, pos_idx, val_idx):
+def read_txtfile_int8(filename, chrom_len, pos_idx, val_idx):
     cdef np.ndarray[np.int8_t, ndim=1]result = \
          np.empty(chrom_len, dtype=np.int8)
     cdef char *vals
 
     vals = txtfile_read_int8(filename, chrom_len, pos_idx, val_idx)
+
+    if vals == NULL:
+        raise Exception("could not read data from file '%s'" % filename)
+    
+    memcpy(result.data, vals, chrom_len * sizeof(char))
+    free(vals)
+
+    return result
+
+
+def read_txtfile_int16(filename, chrom_len, pos_idx, val_idx):
+    cdef np.ndarray[np.int16_t, ndim=1]result = \
+         np.empty(chrom_len, dtype=np.int16)
+    cdef short *vals
+
+    vals = txtfile_read_int16(filename, chrom_len, pos_idx, val_idx)
 
     if vals == NULL:
         raise Exception("could not read data from file '%s'" % filename)
@@ -236,9 +257,10 @@ def read_file(filename, chrom, dtype="float32", format="wiggle",
                                       "currently implemented for bedgraph "
                                       "format")
     elif format == "txtfile":
-        if dtype != "int8":
-            raise NotImplementedError("only int8 datatype is currently "
-                                      "implemented for txtfile format")
+        if dtype != "int8" and dtype != "int16":
+            raise NotImplementedError("only int8 and int16 datatypes are "
+                                      "currently implemented for txtfile "
+                                      "format")
 
         if pos_idx is None or pos_idx < 0:
             raise ValueError("pos_idx must be specified in order to read "
@@ -247,8 +269,16 @@ def read_file(filename, chrom, dtype="float32", format="wiggle",
         if val_idx is None or val_idx < 0:
             raise ValueError("val_idx must be specified in order to read "
                              "txtfile format")
+
+        if dtype == "int8":
+            return read_txtfile_int8(filename, chrom.length, 
+                                     pos_idx, val_idx)
+
+        if dtype == "int16":
+            return read_txtfile_int16(filename, chrom.length,
+                                      pos_idx, val_idx)
+
         
-        return read_txtfile(filename, chrom.length, pos_idx, val_idx)
     else:
         raise NotImplementedError("format '%s' not implemented" % format)
         

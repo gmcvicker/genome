@@ -7,4 +7,7 @@
 char *txtfile_read_int8(const char *filename, const long chr_len, 
 			const int pos_idx, const int val_idx);
 
+short *txtfile_read_int16(const char *filename, const long chr_len, 
+			  const int pos_idx, const int val_idx);
+
 #endif
