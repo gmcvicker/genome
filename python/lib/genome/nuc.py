@@ -18,6 +18,7 @@ TT_ID = 1
 NON_AA_TT_ID = 2
 N_AA_TT = 3
 
+
 def build_dinuc_vector(dna_seq):
     return build_dinuc_matrix(dna_seq).flatten()
 
@@ -113,13 +114,13 @@ def build_nuc_matrix(dna_seq):
 
 
 def nuc2id(nuc):
-    if nuc == "A":
+    if nuc == "A" or nuc == "a":
         return NUC_ID_A
-    if nuc == "C":
+    if nuc == "C" or nuc == "c":
         return NUC_ID_C
-    if nuc == "G":
+    if nuc == "G" or nuc == "g":
         return NUC_ID_G
-    if nuc == "T":
+    if nuc == "T" or nuc == "t":
         return NUC_ID_T
 
     return NUC_ID_UNDEF
