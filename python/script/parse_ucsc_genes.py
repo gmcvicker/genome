@@ -42,7 +42,7 @@ def parse_args():
                                      "of UCSC gene formats, outputs a "
                                      "common format for all of them")
 
-    parser.add_argument("--assembly", metavar="ASSEMBLY", default="hg18",
+    parser.add_argument("--assembly", metavar="ASSEMBLY", default=None,
                         help="name of assembly (e.g. hg18)")
 
     parser.add_argument("gene_file", metavar="GENE_FILE",
