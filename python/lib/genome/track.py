@@ -45,6 +45,8 @@ class Track(object):
         array_node = self.h5f.getNode(node_name)
         return array_node
 
+    
+
 
     def close(self):
         """Closes this track by closing the underlying HDF5 file"""
