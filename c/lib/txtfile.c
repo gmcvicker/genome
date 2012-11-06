@@ -147,7 +147,7 @@ char *txtfile_read_int8(const char *filename, const long chr_len,
  * are set to 0. Returns NULL on error.
  */
 short *txtfile_read_int16(const char *filename, const long chr_len, 
-			  const int pos_idx, const int val_idx) {
+			const int pos_idx, const int val_idx) {
   char line[TXTFILE_MAX_LINE];
   gzFile gzf;
   short *vals;
@@ -227,6 +227,7 @@ short *txtfile_read_int16(const char *filename, const long chr_len,
     } else {
       vals[pos-1] = (short)val;
       count++;
+
       if(count > 1000000) {
 	fprintf(stderr, ".");
 	count = 0;
@@ -234,6 +235,8 @@ short *txtfile_read_int16(const char *filename, const long chr_len,
     }
   }
 
+  fprintf(stderr, "last position was %ld (%ld bp from chr end)\n", 
+	  pos, chr_len - pos);
   my_free(tokens);
   fprintf(stderr, "\n");
   gzclose(gzf);
