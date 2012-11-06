@@ -185,7 +185,7 @@ def read_txtfile_int16(filename, chrom_len, pos_idx, val_idx):
     if vals == NULL:
         raise Exception("could not read data from file '%s'" % filename)
     
-    memcpy(result.data, vals, chrom_len * sizeof(char))
+    memcpy(result.data, vals, chrom_len * sizeof(short))
     free(vals)
 
     return result
