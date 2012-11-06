@@ -169,9 +169,9 @@ def copy_data(from_track, rev_from_track, from_chrom, from_start, from_end,
     """Copy data from one track to another using the provided
     coordinates."""
 
-    sys.stderr.write("%s:%d-%d => %s:%d-%d(%d)\n" %
-                     (from_chrom.name, from_start, from_end,
-                      to_chrom.name, to_start, to_end, ori))
+    # sys.stderr.write("%s:%d-%d => %s:%d-%d(%d)\n" %
+    #                  (from_chrom.name, from_start, from_end,
+    #                   to_chrom.name, to_start, to_end, ori))
 
     if not from_track.has_chromosome(from_chrom):
         # ignore this region, was not present in original track
@@ -336,7 +336,6 @@ def main():
         rev_to_track.h5f.flush()
         rev_to_track.close()
     
-    sys.stderr.write("done\n")
     
 
 main()
