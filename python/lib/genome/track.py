@@ -46,6 +46,14 @@ class Track(object):
         return array_node
 
     
+    def get_val(self, chrom, pos):
+        """returns the value of the track at the specified "
+        genomic position"""
+        
+        array = self.get_array(chrom)
+        return array[pos-1]
+
+    
 
 
     def close(self):
