@@ -35,7 +35,11 @@ char *get_output_path(char *old_path, char *chr) {
     dir[0] = '\0';
   }
 
-  new_filename = util_str_concat(dir, "/", chr, ".bed", NULL);
+  if(util_str_ends_with(filename, ".gz")) {
+    new_filename = util_str_concat(dir, "/", chr, "_", filename, NULL);
+  } else {
+    new_filename = util_str_concat(dir, "/", chr, "_", filename, ".gz", NULL);
+  }
 
   my_free(dir);
 
@@ -43,23 +47,24 @@ char *get_output_path(char *old_path, char *chr) {
 }
 
 
-void close_file(void *key, void *val, void *not_used) {
-  fprintf(stderr, "closing file for %s\n", (char *)key);
-  fclose(val);
+void close_file(gpointer file) {
+  gzclose(file);
 }
+
+void free_key(gpointer key) {
+  my_free(key);
+}
+
 
 void split_bed_chrs(char **filenames, int n_filenames) {
   char line[BED_MAX_LINE], *out_filename;
-  gzFile *gzf;
-  FILE *out_f;
+  gzFile gzf, out_f;
   char chr[CHR_MAX], cur_chr[CHR_MAX];
   int i, j, is_new_chr;
   long count;
   GHashTable *file_tab;
 
   
-  file_tab = g_hash_table_new_full(g_str_hash, g_str_equal,
-				   NULL, NULL);
 
   out_filename = NULL;
   out_f = NULL;
@@ -70,6 +75,10 @@ void split_bed_chrs(char **filenames, int n_filenames) {
 
   for(i = 0; i < n_filenames; i++) {
     fprintf(stderr, "\nprocessing file %s\n", filenames[i]);
+
+    file_tab = g_hash_table_new_full(g_str_hash, g_str_equal,
+				     free_key, close_file);
+
 
     gzf = gzopen(filenames[i], "rb");
     if(!gzf) {
@@ -85,7 +94,14 @@ void split_bed_chrs(char **filenames, int n_filenames) {
 	if(line[j] == '\0' || isspace(line[j])) {
 	  break;
 	}
-	chr[j] = line[j];
+	if(line[j] == '|') {
+	  /* bisulfite data have some spiked in controls
+	   * with weird chromosome names
+	   */
+	  chr[j] = '_';
+	} else {
+	  chr[j] = line[j];
+	}
       }
       chr[j] = '\0';
 
@@ -109,20 +125,16 @@ void split_bed_chrs(char **filenames, int n_filenames) {
 	  out_f = g_hash_table_lookup(file_tab, chr);
 	} else {
 	  /* open a new file */
-	  out_filename = get_output_path(filenames[0], chr);
-	  out_f = fopen(out_filename, "w");
+	  out_filename = get_output_path(filenames[i], chr);
+	  out_f = util_must_gzopen(out_filename, "wb");
 	  fprintf(stderr, "%s\n", chr);
-	  if(!out_f) {
-	    my_err("%s:%d: could not open output file %s", __FILE__, __LINE__,
-		   out_filename);
-	  }
 	  g_hash_table_insert(file_tab, util_str_dup(chr), out_f);
 	}
       }
 
       /* write line to file */
-      /* gzprintf(out_f, "%s", line); */
-      fprintf(out_f, "%s", line);
+      gzprintf(out_f, "%s", line);
+      /* fprintf(out_f, "%s", line); */
 	 
       /* fprintf(stderr, "%s", line); */
 
@@ -132,10 +144,11 @@ void split_bed_chrs(char **filenames, int n_filenames) {
 	count = 0;
       }
     }
+
+    g_hash_table_destroy(file_tab);
+    
   }
   fprintf(stderr, "\n");
-
-  g_hash_table_foreach(file_tab, close_file, NULL);
   
   return;
 }
