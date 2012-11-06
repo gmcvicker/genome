@@ -9,4 +9,6 @@ prog = env.Program('split_wig_chrs', ['split_wig_chrs.c'])
 
 prog += env.Program('split_bed_chrs', ['split_bed_chrs.c'])
 
+prog += env.Program('calc_mappability', ['calc_mappability.c'])
+
 Depends(prog, libgenome)
