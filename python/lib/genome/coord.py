@@ -481,11 +481,17 @@ def group_by_start_end(coords):
 
 
 
-def read_bed(path, chrom_dict, min_region_size=None):
-    """Reads a list of coordinates from the BED file with the provided
-    path (may be gzipped). If a minimum region size is specified then
-    small regions are expanded symmetrically so that they meet this
-    size."""    
+def read_bed(path, chrom_dict, min_region_size=None,
+             add_one_to_start=True, other_attrib=[], 
+             has_header=False):
+    """Reads a list of coordinates from a BED-like file with the
+    provided path (may be gzipped). If a minimum region size is
+    specified then small regions are expanded symmetrically so that
+    they meet this size. Unless other_attrib is specified, then only
+    the first three columns of the file are used (as chromosome,
+    start, end). If names of other attributes are specified, then
+    these are read (as strings) and set as attributes on the returned
+    coord objects"""    
     regions = []
 
     if path.endswith(".gz"):
@@ -494,6 +500,9 @@ def read_bed(path, chrom_dict, min_region_size=None):
         f = open(path, "r")
     
     f = open(path, "r")
+
+    if has_header:
+        header = f.readline()
 
     for l in f:
         line = l.rstrip()
@@ -504,12 +513,16 @@ def read_bed(path, chrom_dict, min_region_size=None):
         words = line.rstrip().split()
 
         if len(words) < 3:
-            raise CoordError("BED line does not contain at least 3 tokens:\n'%s'"
+            raise CoordError("BED line does not contain at "
+                             "least 3 tokens:\n'%s'"
                              % line)
         
         chrom_name = words[0]
         chrom = chrom_dict[chrom_name]
-        start = int(words[1]) + 1
+        if add_one_to_start:
+            start = int(words[1]) + 1
+        else:
+            start = int(words[1])
         end = int(words[2])
 
         if start < 1:
@@ -533,6 +546,26 @@ def read_bed(path, chrom_dict, min_region_size=None):
                 end = chrom.length
 
         region = Coord(chrom, start, end, strand=0)
+
+        # set additional attributes on the coord object by reading 
+        # them from subsequent columns on the line
+        idx = 3
+        for attrib_name in other_attrib:
+            if idx >= len(words):
+                raise CoordError("attribute '%s' could not be read "
+                                 "from bed-like file, because line "
+                                 "has only %d columns" % 
+                                 (attrib_name, len(words)))
+
+            if hasattr(region, attrib_name):
+                raise CoordError("cannot add attribute %s to coordinate "
+                                 "because this attribute already exists" %
+                                 attrib_name)
+
+            setattr(region, attrib_name, words[idx])
+
+            idx += 1                                 
+        
         regions.append(region)
 
     f.close()
