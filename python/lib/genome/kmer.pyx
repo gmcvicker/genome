@@ -7,6 +7,86 @@ import genome.db
 import genome.seq
 cimport numpy as np
 
+
+
+def get_snp_kmers(np.ndarray[np.uint8_t, ndim=1] kmer_array,  
+                  np.ndarray[np.int64_t, ndim=1] snp_idx, 
+                  np.ndarray[np.uint8_t, ndim=1] ref_base, 
+                  np.ndarray[np.uint8_t, ndim=1] alt_base, 
+                  int i=0, kmer_list=[]):
+
+    idx = snp_idx[i]
+
+    # append kmer with reference snp at this position
+    kmer_array[idx] = chr(ref_base[idx])
+    kmer_list.append("".join(kmer_array))
+    
+    if i < snp_idx.size-1:
+        # recursively add other SNPs
+        get_snp_kmers(kmer_array, snp_idx, ref_base, alt_base, i=i+1,
+                      kmer_list=kmer_list)
+
+    
+    # append kmer with alt snp at this position
+    kmer_array[idx] = chr(alt_base[idx])
+    kmer_list.append("".join(kmer_array))
+
+    if i < snp_idx.size-1:
+        # recursively add other SNPs
+        get_snp_kmers(kmer_array, snp_idx, ref_base, alt_base, i=i+1,
+                      kmer_list=kmer_list)
+
+    return kmer_list
+
+    
+
+
+def count_kmers_with_snps(dna, int kmer_size, kmer_counts, 
+                          np.ndarray[np.uint8_t, ndim=1] snp_ref,
+                          np.ndarray[np.uint8_t, ndim=1] snp_alt):
+    cdef int i, chr_len, n_obs
+    chr_len = len(dna)
+
+    for i in xrange(chr_len-kmer_size+1):
+        if (i % 1000000) == 0:
+            sys.stderr.write(".")
+
+        kmer = dna[i:(i + kmer_size)]
+
+        # account for SNPs here!
+        ref = snp_ref[1:(i + kmer_size)]
+        alt = snp_ref[1:(i + kmer_size)]
+
+        snp_idx = np.where(ref != 0)[0]
+        
+
+        kmer_list = []
+        if snp_idx.size > 0:
+            # there are SNPs that overlap this kmer
+            kmer_array = np.array([x for x in kmer])
+            
+            kmer_list = get_snp_kmers(kmer_array, snp_idx, ref, alt)
+
+            sys.stderr.write("kmer overlaps SNP!:\n  " +
+                             "\n  ".join(kmer_list))
+            
+        else:
+            kmer_list = [kmer]
+
+        # update the count of kmers from all sites
+
+        for k in kmer_list:
+            if kmer in kmer_counts:
+                kmer_counts[k] += 1
+            else:
+                kmer_counts[k] = 1
+            
+    return
+
+
+
+
+
 def count_kmers(dna, int kmer_size, np.ndarray[np.int32_t, ndim=1] obs_counts,
                 all_kmers, obs_kmers):
     """Simultneously Counts kmers at all sites and at a subset of
