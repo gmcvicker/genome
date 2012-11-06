@@ -138,7 +138,7 @@ int parse_wiggle_header(char *line, char **chrom, int *type,
  */
 float *wig_read_float32(const char *filename, const long chr_len) {
   char line[WIG_MAX_LINE];
-  gzFile *gzf;
+  gzFile gzf;
   float *vals, val;
   int type;
   char *chrom;
@@ -232,7 +232,7 @@ float *wig_read_float32(const char *filename, const long chr_len) {
  */
 short *wig_read_int16(const char *filename, const long chr_len) {
   char line[WIG_MAX_LINE];
-  gzFile *gzf;
+  gzFile gzf;
   short *vals;
   char *chrom;
   long pos, step, span, count, val;
@@ -338,7 +338,7 @@ short *wig_read_int16(const char *filename, const long chr_len) {
  */
 void wig_write_uint8(const char *filename, const unsigned char *vals,
 		     const char *chr_name, const long chr_len) {
-  gzFile *gzf;
+  gzFile gzf;
   long i;
   char *out_filename;
 

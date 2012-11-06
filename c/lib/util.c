@@ -134,7 +134,7 @@ void util_fwrite_line_subset(FILE *input_fh, FILE *output_fh,
  * to the beginning of the file before and after the count of
  * newlines.
  */
-long util_gzcount_lines(gzFile *gzf) {
+long util_gzcount_lines(gzFile gzf) {
   char buf[UTIL_FGETS_BUF_SZ];
   long line_count;
   size_t len;
@@ -226,7 +226,7 @@ long util_fcount_lines_match(FILE *fh, const char *starts_with) {
  * provided string. The gzFile is rewound to the beginning of the
  * file before and after the count of newlines.
  */
-long util_gzcount_lines_match(gzFile *gzf, const char *starts_with) {
+long util_gzcount_lines_match(gzFile gzf, const char *starts_with) {
   char buf[UTIL_FGETS_BUF_SZ];
   long line_count;
   int started_with, at_line_start;
@@ -357,7 +357,7 @@ char *util_str_concat(const char *str1, ...) {
 /**
  * same as util_fgets_line but works with gz-compressed files.
  */
-char *util_gzgets_line(gzFile *gzf) {
+char *util_gzgets_line(gzFile gzf) {
   char buf[UTIL_FGETS_BUF_SZ];
   char *line, *old_line;;
   long len, ttl_len;
@@ -858,8 +858,8 @@ FILE *util_must_fopen(const char *path, const char *mode) {
  * Wrapper around fopen that prints an error and aborts on
  * failure to open the file
  */
-gzFile *util_must_gzopen(const char *path, const char *mode) {
-  gzFile *f;
+gzFile util_must_gzopen(const char *path, const char *mode) {
+  gzFile f;
 
   if((strcmp(mode, "wb") == 0) && !util_str_ends_with(path, ".gz")) {
     my_warn("%s:%d: file '%s' does not end with '.gz' but "

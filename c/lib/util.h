@@ -28,14 +28,14 @@ int util_has_gz_ext(const char *filename);
 
 char *util_read_entire_file(char *filename);
 long util_fcount_lines(FILE *fh);
-long util_gzcount_lines(gzFile *gzf);
+long util_gzcount_lines(gzFile gzf);
 long util_fcount_lines_match(FILE *fh, const char *starts_with);
-long util_gzcount_lines_match(gzFile *gzf, const char *starts_with);
+long util_gzcount_lines_match(gzFile gzf, const char *starts_with);
 
 char *util_fgets_line(FILE *fh);
-char *util_gzgets_line(gzFile *fh);
+char *util_gzgets_line(gzFile fh);
 FILE *util_must_fopen(const char *path, const char *mode);
-gzFile *util_must_gzopen(const char *path, const char *mode);
+gzFile util_must_gzopen(const char *path, const char *mode);
 void util_must_fread(FILE *file, void *buf, size_t size);
 void util_must_fwrite(FILE *file, void *buf, size_t size);
 int util_file_exists(const char *path);

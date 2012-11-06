@@ -58,7 +58,7 @@ char *get_output_path(char *old_path, char *chr) {
 
 void split_wig_chrs(char *filename) {
   char line[WIG_MAX_LINE], *out_filename, *header;
-  gzFile *gzf, *out_gzf;
+  gzFile gzf, out_gzf;
   int type;
   char *chr, *cur_chr;
   long pos, step, span, count;

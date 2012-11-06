@@ -18,7 +18,7 @@
  */
 short *bedgraph_read_int16(const char *filename, const long chr_len) {
   char buf[BEDGRAPH_MAX_LINE];
-  gzFile *gzf;
+  gzFile gzf;
   short *vals;
   long start, end, i, val, count, line_num;
   char *tokens[BEDGRAPH_N_TOK], *line;
@@ -143,7 +143,7 @@ short *bedgraph_read_int16(const char *filename, const long chr_len) {
  */
 float *bedgraph_read_float32(const char *filename, const long chr_len) {
   char buf[BEDGRAPH_MAX_LINE];
-  gzFile *gzf;
+  gzFile gzf;
   float *vals, val;
   long start, end, i, count, line_num;
   char *tokens[BEDGRAPH_N_TOK], *line;
