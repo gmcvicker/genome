@@ -11,7 +11,7 @@ enum nucleotide {NUC_A=0, NUC_C, NUC_G, NUC_T, NUC_GAP, NUC_N, NUM_NUCS};
 #define NUM_REAL_NUCS 4
 
 
-/* macro function, compliments a nucleotide ID */
+/* macro function, complements a nucleotide ID */
 #define nuc_comp(x) ((x==NUC_A) ? NUC_T : \
                     ((x==NUC_T) ? NUC_A : \
                     ((x==NUC_G) ? NUC_C : \
