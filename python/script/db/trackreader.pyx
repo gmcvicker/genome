@@ -152,7 +152,7 @@ def read_bedgraph_float32(filename, chrom_len):
     if vals == NULL:
         raise IOError("could not read data from file '%s'" % filename)
     
-    memcpy(result.data, vals, chrom_len * sizeof(short))
+    memcpy(result.data, vals, chrom_len * sizeof(float))
     free(vals)
 
     return result
