@@ -1,6 +1,6 @@
 import sys
 import tables
-
+import numpy as np
 
 import genome.seq
 
@@ -21,6 +21,8 @@ class Track(object):
         self.name = name
         self.path = path
         self.h5f = tables.openFile(path, mode)
+        
+        self._missing_chrom = set([])
 
     def __enter__(self):
         sys.stderr.write("Track %s opened\n" % self.name)
@@ -42,16 +44,29 @@ class Track(object):
     def get_array(self, chrom):
         """returns an PyTables ArrayNode for a particular chromosome"""
         node_name = "/" + str(chrom)
-        array_node = self.h5f.getNode(node_name)
+
+        if node_name in self.h5f:
+            array_node = self.h5f.getNode(node_name)
+        else:
+            if str(chrom) not in self._missing_chrom:
+                sys.stderr.write("WARNING: track '%s' is missing chromosome '%s'\n" % 
+                                 (self.name, str(chrom)))
+                self._missing_chrom.add(str(chrom))
+            return None
+                
         return array_node
 
     
     def get_val(self, chrom, pos):
         """returns the value of the track at the specified "
         genomic position"""
-        
+
         array = self.get_array(chrom)
-        return array[pos-1]
+
+        if array:
+            return array[pos-1]
+
+        return np.nan
 
     
 
@@ -93,8 +108,23 @@ class Track(object):
     def get_nparray(self, chrom, start=None, end=None):
         """Returns a numpy array of data for the specified chromosome
         or chromosomal region"""
-        array_node = self.get_array(chrom)
-        return self.__get_np_slice(array_node, start, end)
+        array = self.get_array(chrom)
+
+        if array is None:
+            # default to array of nan
+            if hasattr(chrom, "length"):
+                array = np.empty(chrom.length, dtype=np.float32)
+            else:
+                chrom_d
+                raise ValueError("cannot create array for missing chromosome "
+                                 "of unknown length for track '%s'" % track.name)
+
+            array[:] = np.nan
+
+        return self.__get_np_slice(array, start, end)
+
+        
+        
 
 
     def get_seq_str(self, chrom, start=None, end=None):
