@@ -27,5 +27,8 @@ short *wig_read_int16(const char *filename, const long chr_len);
 void wig_write_uint8(const char *filename, const unsigned char *vals,
 		     const char *chr_name, const long chr_len);
 
+void wig_write_flaot32(const char *filename, const float *vals,
+		       const char *chr_name, const long chr_len);
+
 
 #endif

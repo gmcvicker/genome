@@ -334,7 +334,6 @@ short *wig_read_int16(const char *filename, const long chr_len) {
 
 /**
  * Writes int8 values for an entire chromosome to a gzipped wiggle file.
- * Unspecified values are set to 0. Returns NULL on failure.
  */
 void wig_write_uint8(const char *filename, const unsigned char *vals,
 		     const char *chr_name, const long chr_len) {
@@ -366,6 +365,44 @@ void wig_write_uint8(const char *filename, const unsigned char *vals,
   my_free(out_filename);
 }
 
+
+
+
+
+
+
+/**
+ * Writes float32 values for an entire chromosome to a gzipped wiggle file.
+ */
+void wig_write_float32(const char *filename, const float *vals,
+		       const char *chr_name, const long chr_len) {
+  gzFile gzf;
+  long i;
+  char *out_filename;
+
+  if(!util_has_gz_ext(filename)) {
+    my_warn("%s:%d: appending '.gz' to filename", __FILE__, __LINE__);
+    out_filename = util_str_concat(filename, ".gz", NULL);
+  } else {
+    out_filename = util_str_dup(filename);
+  }
+  
+  gzf = util_must_gzopen(out_filename, "wb");
+
+  fprintf(stderr, "writing to wig file '%s'\n", out_filename);
+
+  gzprintf(gzf, "fixedStep chrom=%s start=1 step=1\n", chr_name);
+  for(i = 0; i < chr_len; i++) {
+    if((i % 1000000) == 0) {
+      fprintf(stderr, ".");
+    }
+    gzprintf(gzf, "%.3f\n", vals[i]);
+  }
+  gzclose(gzf);
+
+  fprintf(stderr, "\n");
+  my_free(out_filename);
+}
 
 
 
