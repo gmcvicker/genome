@@ -43,8 +43,9 @@ class TrackStats(object):
 
 
     def __str__(self):
-        return "n=%d n_nan=%d min=%d max=%d sum=%d" % \
-            (self.n, self.n_nan, self.min, self.max, self.sum)
+        return "n=%d n_nan=%s min=%s max=%s sum=%s" % \
+            (self.n, str(self.n_nan), str(self.min), str(self.max), 
+             str(self.sum))
 
 
 
