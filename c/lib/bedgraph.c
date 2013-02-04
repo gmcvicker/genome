@@ -3,6 +3,7 @@
 #include <zlib.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 
 #include "memutil.h"
 #include "util.h"
@@ -139,12 +140,13 @@ short *bedgraph_read_int16(const char *filename, const long chr_len) {
  * Reads float32 values for an entire chromosome from a tab- or
  * space-delimited text file. The column indices of the position and
  * value columns in the text file must be provided. Unspecified values
- * are set to 0. Returns NULL on error.
+ * are set to NAN. Returns NULL on error.
  */
 float *bedgraph_read_float32(const char *filename, const long chr_len) {
   char buf[BEDGRAPH_MAX_LINE];
   gzFile gzf;
-  float *vals, val;
+  float *vals;
+  double val;
   long start, end, i, count, line_num;
   char *tokens[BEDGRAPH_N_TOK], *line;
 
@@ -161,9 +163,12 @@ float *bedgraph_read_float32(const char *filename, const long chr_len) {
     return NULL;
   }
 
-  /* allocate memory and initialize to 0 */
+  /* allocate memory and initialize to NAN */
   vals = (float *)my_malloc(chr_len * sizeof(float));
-  memset(vals, 0, chr_len * sizeof(float));
+  for(i = 0; i < chr_len; i++) {
+    vals[i] = NAN;
+  }
+
 
   line_num = 0;
 
@@ -212,7 +217,7 @@ float *bedgraph_read_float32(const char *filename, const long chr_len) {
     /* get data value */
     errno = 0;
     val = strtod(tokens[3], NULL);
-    if(val == 0 && errno) {
+    if(errno) {
       my_warn("%s:%d: could not parse value from line: %ld\n",
 	      __FILE__, __LINE__, line_num);
       my_free(vals);
@@ -228,7 +233,7 @@ float *bedgraph_read_float32(const char *filename, const long chr_len) {
 		end);
 	break;
       }
-      if(vals[i] != 0) {
+      if(!isnan(vals[i])) {
 	my_warn("%s:%d: value at index %d already set on line %d", __FILE__,
 		__LINE__, i, line_num);
       }
@@ -245,7 +250,7 @@ float *bedgraph_read_float32(const char *filename, const long chr_len) {
     line = gzgets(gzf, buf, sizeof(buf));
   }
 
-  fprintf(stderr, "\n");
+  fprintf(stderr, "done parsing bedgraph\n");
   gzclose(gzf);
   
   return vals;
