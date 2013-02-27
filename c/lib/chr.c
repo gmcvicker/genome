@@ -44,10 +44,14 @@ Chromosome *chr_read_file(const char *filename, int *n_chr) {
   FILE *f;
   int n, i;
 
+  if(util_has_gz_ext(filename)) {
+    my_err("%s:%d: gzipped chr files not currently supported\n",
+	   __FILE__, __LINE__);
+  }
+
   f = util_must_fopen(filename, "r");
   *n_chr = util_fcount_lines(f);
   
-
   if(*n_chr < 1) {
     my_err("%s:%d: chromosome file '%s' is empty\n", 
 	   __FILE__, __LINE__, filename);
@@ -62,7 +66,8 @@ Chromosome *chr_read_file(const char *filename, int *n_chr) {
 
     n = sscanf(buf, "%s %ld", name_buf, &chrs[i].len);
     if(n < 2) {
-      my_err("%s:%d: line did not have at least 2 tokens\n");
+      my_err("%s:%d: line did not have at least 2 tokens:\n'%s'",
+	     __FILE__, __LINE__, buf);
     }
     chrs[i].name = util_str_dup(name_buf);
     chrs[i].assembly = NULL;
