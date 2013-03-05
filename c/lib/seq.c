@@ -295,7 +295,7 @@ Seq *seq_subseq_coords(const Seq *seq, const SeqCoord *coords,
       /* reverse complement each copied portion if sequences are on
        * opposite strands
        */
-      seq_nucs_revcomp(&new_seq->sym[j], len);
+      nuc_ids_revcomp(&new_seq->sym[j], len);
     }
 
     j += len;
@@ -351,19 +351,6 @@ void seq_rev(Seq *fwd) {
   util_breverse(fwd->sym, fwd->len);
 }
 
-
-/**
- * Does an in-place reverse complement of a provided string of
- * nucleotide ids.
- */
-void seq_nucs_revcomp(unsigned char *nuc_ids, long len) {
-  long i;
-
-  util_breverse(nuc_ids, len);
-  for(i = 0; i < len; i++) {
-    nuc_ids[i] = nuc_comp(nuc_ids[i]);
-  }
-}
 
 
 /**
