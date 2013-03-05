@@ -30,7 +30,7 @@ typedef struct {
   Chromosome *chr;
   long start;
   long end;
-  short strand;
+  char strand; /* STRAND_FWD (1), STRAND_NONE (0), or STRAND_REV (-1) */
   double score;
   char *seqname;
 } SeqCoord;
@@ -51,6 +51,6 @@ int seq_coord_ovlp(SeqCoord *sc1, SeqCoord *sc2, int cmp_strand);
 
 void seq_coord_array_free(SeqCoord *scs, long num);
 
-char *seq_coord_str(SeqCoord *sc);
+void seq_coord_write(FILE *fh, SeqCoord *sc);
 
 #endif
