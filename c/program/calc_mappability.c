@@ -340,8 +340,8 @@ int main(int argc, char **argv) {
     fprintf(stderr, "counting reverse complement kmers\n");
     /* reverse complement sequence and arrays of ref and alt alleles */
     seq_revcomp(seq);
-    seq_nucs_revcomp(ref_alleles, seq->len);
-    seq_nucs_revcomp(alt_alleles, seq->len);
+    nuc_ids_revcomp(ref_alleles, seq->len);
+    nuc_ids_revcomp(alt_alleles, seq->len);
     count_kmers(count_tab, seq, ref_alleles, alt_alleles, kmer_size);
 
     my_free(ref_alleles);
