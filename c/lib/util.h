@@ -24,6 +24,10 @@
 #define util_fread_one(file, var) util_must_fread((file), &(var), sizeof(var))
 #define util_fwrite_one(file, var) util_must_fwrite((file), &(var), sizeof(var))
 
+#define util_gzread_one(file, var) util_must_gzread((file), &(var), sizeof(var))
+#define util_gzwrite_one(file, var) util_must_gzwrite((file), &(var), sizeof(var))
+
+
 int util_has_gz_ext(const char *filename);
 
 char *util_read_entire_file(char *filename);
@@ -38,6 +42,8 @@ FILE *util_must_fopen(const char *path, const char *mode);
 gzFile util_must_gzopen(const char *path, const char *mode);
 void util_must_fread(FILE *file, void *buf, size_t size);
 void util_must_fwrite(FILE *file, void *buf, size_t size);
+void util_must_gzwrite(gzFile gzf, void *buf, size_t size);
+void util_must_gzread(gzFile gzf, void *buf, size_t size);
 int util_file_exists(const char *path);
 
 char *util_long_to_comma_str(const long x);

@@ -819,6 +819,22 @@ int util_dbl_cmp(const void *x, const void *y) {
 
 
 /**
+ * Reads size bytes from a gzipped file or prints an error and aborts.
+ */
+void util_must_gzread(gzFile gzf, void *buf, size_t size) {
+  int errnum;
+
+  if(gzread(gzf, buf, size) != size) {
+    if(gzerror(gzf, &errnum)) {
+      my_err("error reading %lld bytes: %s", (long long)size,
+	     gzerror(gzf, &errnum));
+    } else {
+      my_err("end of file reading %lld bytes", (long long)size);
+    }
+  }
+}
+
+/**
  * Reads size bytes from a file or prints an error and aborts. 
  * Based on Jim Kent's mustRead function
  */
@@ -832,6 +848,42 @@ void util_must_fread(FILE *file, void *buf, size_t size) {
     }
   }
 }
+
+
+
+
+/**
+ * Writes size bytes to a file or prints an error and aborts.
+ */
+void util_must_fwrite(FILE *file, void *buf, size_t size) {
+  if(size != 0 && fwrite(buf, size, 1, file) != 1) {
+    if(ferror(file)) {
+      my_err("error writing %lld bytes: %s", (long long)size, 
+            strerror(ferror(file)));
+    } else {
+      my_err("error writing %lld bytes\n", (long long)size);
+    }
+  }
+}
+
+
+/**
+ * Writes size bytes to a gzipped file or prints an error and aborts.
+ */
+void util_must_gzwrite(gzFile gzf, void *buf, size_t size) {
+  int errnum;
+
+  if(gzwrite(gzf, buf, size) != size) {
+    if(gzerror(gzf, &errnum)) {
+      my_err("error writing %lld bytes: %s", (long long)size,
+	     gzerror(gzf, &errnum));
+    } else {
+      my_err("error writing %lld bytes\n", (long long)size);
+    }
+  }
+}
+
+
 
 
 
@@ -883,20 +935,6 @@ gzFile util_must_gzopen(const char *path, const char *mode) {
 }
 
 
-
-/**
- * Writes size bytes to a file or prints an error and aborts.
- */
-void util_must_fwrite(FILE *file, void *buf, size_t size) {
-  if(size != 0 && fwrite(buf, size, 1, file) != 1) {
-    if(ferror(file)) {
-      my_err("error writing %lld bytes: %s", (long long)size, 
-	     strerror(ferror(file)));
-    } else {
-      my_err("error writing %lld bytes\n", (long long)size);
-    }
-  }
-}
 
 
 /**
