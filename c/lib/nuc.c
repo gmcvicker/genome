@@ -153,3 +153,17 @@ void nuc_ids_revcomp(unsigned char *nuc_ids, long len) {
   }
 }
 
+
+/**
+ * Returns true if any nucleotides in provided array are NUC_N
+ */
+int nuc_ids_have_n(unsigned char *nucs, const long len) {
+  long i;
+  for(i = 0; i < len; i++) {
+    if(nucs[i] == NUC_N) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+

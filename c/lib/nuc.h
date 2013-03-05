@@ -29,6 +29,8 @@ unsigned char nuc_comp(const unsigned char nuc_id);
 
 char *nuc_ids_to_str(char *buf, const unsigned char *ids, const long len);
 
+int nuc_ids_have_n(unsigned char *ids, const long len);
+
 unsigned char *nuc_str_to_ids(unsigned char *buf, const char *str, 
 			      const long len);
 
