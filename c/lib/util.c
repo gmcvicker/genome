@@ -935,6 +935,18 @@ gzFile util_must_gzopen(const char *path, const char *mode) {
 }
 
 
+/**
+ * opens a gzipped file in write mode, but aborts if the file already
+ * exists.
+ */
+gzFile util_check_gzopen(const char *path) {
+  if(util_file_exists(path)) {
+    my_err("%s:%d: output file already exists: %s",
+	   __FILE__, __LINE__, path);
+  }
+  return util_must_gzopen(path, "wb");
+}
+
 
 
 /**

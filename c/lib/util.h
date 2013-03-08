@@ -40,6 +40,7 @@ char *util_fgets_line(FILE *fh);
 char *util_gzgets_line(gzFile fh);
 FILE *util_must_fopen(const char *path, const char *mode);
 gzFile util_must_gzopen(const char *path, const char *mode);
+gzFile util_check_gzopen(const char *path);
 void util_must_fread(FILE *file, void *buf, size_t size);
 void util_must_fwrite(FILE *file, void *buf, size_t size);
 void util_must_gzwrite(gzFile gzf, void *buf, size_t size);
