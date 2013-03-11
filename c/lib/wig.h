@@ -22,7 +22,10 @@ int parse_wiggle_header(char *line, char **chrom, int *type,
 			long *start, long *step, long *span);
 
 float *wig_read_float32(const char *filename, const long chr_len);
+
 short *wig_read_int16(const char *filename, const long chr_len);
+
+unsigned char * wig_read_uint8(const char *filename, const long chr_len);
 
 void wig_write_uint8(const char *filename, const unsigned char *vals,
 		     const char *chr_name, const long chr_len);

@@ -331,6 +331,110 @@ short *wig_read_int16(const char *filename, const long chr_len) {
 
 
 
+/**
+ * Reads unsigned int8 values for an entire chromosome from a wiggle file.
+ * Unspecified values are set to 0. Returns NULL on failure.
+ */
+unsigned char *wig_read_uint8(const char *filename, const long chr_len) {
+  char line[WIG_MAX_LINE];
+  gzFile gzf;
+  unsigned char *vals;
+  char *chrom;
+  long pos, step, span, count, val;
+  int type;
+
+  /* allocate memory, initialize values to 0 */
+  vals = my_malloc(sizeof(unsigned char) * chr_len);
+  long i;
+  for(i = 0; i < chr_len; i++) {
+    vals[i] = 0;
+  }
+  
+  gzf = gzopen(filename, "rb");
+  if(!gzf) {
+    my_warn("%s:%d: could not open file %s", __FILE__, __LINE__, filename);
+    my_free(vals);
+    return NULL;
+  }
+
+  pos = 1;
+  count = 0;
+  while(gzgets(gzf, line, sizeof(line))) {
+    if((line[0] == 'f') || line[0] == 'v') {
+      /* parse header */
+      chrom = NULL;
+      if(parse_wiggle_header(line, &chrom, &type, &pos, &step, &span)) {
+	my_free(vals);
+	return NULL;
+      }
+      fprintf(stderr, "pos=%ld, step=%ld, span=%ld\n", pos, step, span);
+
+      my_free(chrom);
+    } else {
+      val = 0;
+      if(type == WIG_TYPE_FIX) {
+	/* fixed format just has values */
+	val = util_parse_long(line);
+      }
+      else if(type == WIG_TYPE_VAR) {
+	/* var format has a start position followed by a value */
+	char *next;
+	errno = 0;
+	pos = strtol(line, &next, 10);
+	if(errno && pos == 0) {
+	  my_warn("%s:%d: first token in var step wig line is not "
+		  "valid integer: '%s'", __FILE__, __LINE__, line);
+	  my_free(vals);
+	  return NULL;
+	}
+	val = util_parse_long(next);
+      } 
+      else {
+	my_warn("%s:%d: unknown wiggle format\n", __FILE__, __LINE__);
+	my_free(vals);
+	return NULL;
+      }
+
+      if(val > UCHAR_MAX) {
+	my_warn("%s:%d: value %ld exceeds uint8 max, setting to %d", 
+		__FILE__, __LINE__, val, UCHAR_MAX); 
+	val = UCHAR_MAX;
+      }
+      if(val < 0) {
+	my_warn("%s:%d: value %ld is less than uint16 min, setting to 0", 
+		__FILE__, __LINE__, val);
+	val = 0;
+      }
+
+      count++;
+      if(count > 1000000) {
+	fprintf(stderr, ".");
+	count = 0;
+      }
+
+      for(i = 0; i < span; i++) {
+	if((pos+i > chr_len) || (pos+i < 1)) {
+	  my_warn("%s:%d: skipping pos %ld"
+		  "(past chromosome end %ld)\n", __FILE__, __LINE__,
+		  pos+i, chr_len);
+	} else {
+	  vals[pos + i - 1] = val;
+	}
+      }
+      pos += step;
+    }
+  }
+  fprintf(stderr, "\n");
+  gzclose(gzf);
+  
+  return vals;
+}
+
+
+
+
+
+
 
 /**
  * Writes int8 values for an entire chromosome to a gzipped wiggle file.
