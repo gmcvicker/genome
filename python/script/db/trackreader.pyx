@@ -91,7 +91,6 @@ def read_wig_int16(filename, chrom_len):
     memcpy(result.data, vals, chrom_len * sizeof(short))
     free(vals)
 
-    sys.stderr.write("done\n")
     return result
 
 
@@ -109,7 +108,6 @@ def read_wig_uint8(filename, chrom_len):
     memcpy(result.data, vals, chrom_len * sizeof(unsigned char))
     free(vals)
 
-    sys.stderr.write("done\n")
     return result
 
 
