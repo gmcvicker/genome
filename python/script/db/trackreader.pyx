@@ -21,6 +21,7 @@ cdef extern from "seq.h":
 cdef extern from "wig.h":
     float *wig_read_float32(char *filename, long chr_len)
     short *wig_read_int16(char *filename, long chr_len)
+    unsigned char *wig_read_uint8(char *filename, long chr_len)
 
 cdef extern from "txtfile.h":
     char *txtfile_read_int8(char *filename, long chr_len,
@@ -90,8 +91,27 @@ def read_wig_int16(filename, chrom_len):
     memcpy(result.data, vals, chrom_len * sizeof(short))
     free(vals)
 
-    sys.stderr.write(">\n")
+    sys.stderr.write("done\n")
     return result
+
+
+
+def read_wig_uint8(filename, chrom_len):
+    cdef np.ndarray[np.uint8_t, ndim=1]result = \
+         np.empty(chrom_len, dtype=np.uint8)
+    cdef unsigned char *vals
+    
+    vals = wig_read_uint8(filename, chrom_len)
+
+    if vals == NULL:
+        raise Exception("could not read data from file '%s'" % filename)
+    
+    memcpy(result.data, vals, chrom_len * sizeof(unsigned char))
+    free(vals)
+
+    sys.stderr.write("done\n")
+    return result
+
 
 
 
@@ -226,10 +246,12 @@ def read_file(filename, chrom, dtype="float32", format="wiggle",
             return read_wig_float32(filename, chrom.length)
         elif dtype == "int16":
             return read_wig_int16(filename, chrom.length)
+        elif dtype == "uint8":
+            return read_wig_uint8(filename, chrom.length)
         else:
-            raise NotImplementedError("only float32 and int16 datatypes "
-                                      "are currently implemented for wiggle "
-                                      "format")
+            raise NotImplementedError("only float32, uint8 and int16 "
+                                      "datatypes are currently implemented "
+                                      "for wiggle format")
     elif format in ("xb", "xbf"):
         if dtype != "uint8":
             raise NotImplementedError("only uint8 dataype is currently "
