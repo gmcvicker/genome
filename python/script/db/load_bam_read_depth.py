@@ -72,7 +72,10 @@ def add_read_depths(chrom, fwd_array, rev_array, bam_filename):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-        
+    
+    parser.add_argument("--assembly", help="genome assembly that reads "
+                        "were mapped to (e.g. hg18)", default="hg18")
+    
     parser.add_argument("--rev_track", metavar="REV_TRACK", action="store",
                         default=None,
                         help="if specified, reverse fragment read depths "
@@ -107,8 +110,7 @@ def main():
     args = parse_args()
     
     # create a database track
-    gdb = genome.db.GenomeDB()
-
+    gdb = genome.db.GenomeDB(assembly=args.assembly)
     fwd_track = gdb.create_track(args.track)
 
     if args.rev_track:
