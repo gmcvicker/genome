@@ -56,7 +56,8 @@ def combine_tracks(gdb, combined_track, tracks, dtype=None):
         combined = np.zeros(chrom.length, dtype=larger_dtype)
 
         for track in tracks:
-            combined += track.get_nparray(chrom)
+            if track.has_chromosome(chrom):
+                combined += track.get_nparray(chrom)
 
         large_vals = (combined > max_val)
 
