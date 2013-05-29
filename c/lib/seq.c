@@ -167,6 +167,36 @@ int seq_read_fasta_record(Seq *seq, gzFile f) {
 }
 
 
+/**
+ * Writes the sequence to the provided file in fasta format
+ */
+void seq_write_fasta_record(Seq *seq, gzFile f) {
+  long i;
+  int line_len;
+
+  /* write header */
+  gzprintf(f, ">%s\n", seq->name);
+
+  line_len = 0;
+
+  /* write nucleotides */
+  for(i = 0; i < seq->len; i++) {
+    gzprintf(f, "%c", nuc_id_to_char(seq->sym[i]));
+    line_len += 1;
+
+    if(line_len >= SEQ_FASTA_LINE_LEN) {
+      /* start a new line */
+      gzprintf(f, "\n");
+      line_len = 0;
+    }
+  }
+
+  if(line_len != 0) {
+    /* end last line */
+    gzputc(f, "\n");
+  }
+}
+
 
 
 /*
