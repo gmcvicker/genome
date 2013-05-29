@@ -748,8 +748,8 @@ int util_str_starts_with(const char *str, const char *start) {
 
 
 /**
- * Returns FALSE if the end of str exactly matches the characters in
- * end
+ * Returns TRUE if the end of str exactly matches the characters in
+ * end, returns FALSE otherwise.
  */
 int util_str_ends_with(const char *str, const char *end) {
   size_t i, j;
