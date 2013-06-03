@@ -175,7 +175,11 @@ void seq_write_fasta_record(Seq *seq, gzFile f) {
   int line_len;
 
   /* write header */
-  gzprintf(f, ">%s\n", seq->name);
+  if(seq->name == NULL) {
+    gzprintf(f, ">\n");
+  } else {
+    gzprintf(f, ">%s\n", seq->name);
+  }
 
   line_len = 0;
 
@@ -193,7 +197,7 @@ void seq_write_fasta_record(Seq *seq, gzFile f) {
 
   if(line_len != 0) {
     /* end last line */
-    gzputc(f, "\n");
+    gzputc(f, '\n');
   }
 }
 
