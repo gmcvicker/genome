@@ -1,6 +1,4 @@
-
 import sys
-import os
 
 import pysam
 import tables
@@ -13,11 +11,12 @@ import genome.db
 MIN_MAP_QUAL = 10
 MAX_VAL = 65535
 
+
 def create_carray(track, chrom):
     atom = tables.UInt16Atom(dflt=0)
-    
+
     zlib_filter = tables.Filters(complevel=1, complib="zlib")
-    
+
     # create CArray for this chromosome
     shape = [chrom.length]
     carray = track.h5f.createCArray(track.h5f.root, chrom.name,
@@ -26,12 +25,11 @@ def create_carray(track, chrom):
     return carray
 
 
-
 def add_read_depths(chrom, fwd_array, rev_array, bam_filename):
     samfile = pysam.Samfile(bam_filename, "rb")
 
     count = 0
-    
+
     for read in samfile.fetch(reference=chrom.name, start=1,
                               end=chrom.length):
         count += 1
@@ -53,29 +51,27 @@ def add_read_depths(chrom, fwd_array, rev_array, bam_filename):
         if end > chrom.length:
             sys.stderr.write("  warning: read coordinates %d-%d fall outside "
                              "%s range 1-%d" % (start, end, chrom.name,
-                                                 chrom.length))
+                                                chrom.length))
             end = chrom.length
-        
+
         if start < 1:
             sys.stderr.write("  warning: read coordinates %d-%d fall outside "
                              "%s range 1-%d" % (start, end, chrom.name,
-                                                 chrom.length))
+                                                chrom.length))
             start = 1
 
         if read.is_reverse:
             rev_array[(start-1):end] += 1
         else:
             fwd_array[(start-1):end] += 1
-        
-
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    
+
     parser.add_argument("--assembly", help="genome assembly that reads "
                         "were mapped to (e.g. hg18)", default="hg18")
-    
+
     parser.add_argument("--rev_track", metavar="REV_TRACK", action="store",
                         default=None,
                         help="if specified, reverse fragment read depths "
@@ -86,15 +82,13 @@ def parse_args():
     parser.add_argument("track", action="store",
                         metavar="TRACK",
                         help="name of track to store read depths in")
-    
+
     parser.add_argument("bam_filename", action="store", nargs="+",
                         help="sorted BAM file to read data from")
 
     args = parser.parse_args()
 
     return args
-    
-
 
 
 def threshold_large_vals(array):
@@ -105,10 +99,9 @@ def threshold_large_vals(array):
         array[array > MAX_VAL] = MAX_VAL
 
 
-
 def main():
     args = parse_args()
-    
+
     # create a database track
     gdb = genome.db.GenomeDB(assembly=args.assembly)
     fwd_track = gdb.create_track(args.track)
@@ -117,10 +110,10 @@ def main():
         rev_track = gdb.create_track(args.rev_track)
     else:
         rev_track = None
-    
+
     for chrom in gdb.get_chromosomes():
         sys.stderr.write("%s\n" % chrom.name)
-        
+
         fwd_carray = create_carray(fwd_track, chrom)
 
         if rev_track:
@@ -134,25 +127,25 @@ def main():
             rev_array = np.zeros(chrom.length, np.uint32)
         else:
             rev_array = fwd_array
-        
+
         # fill with values
         for bam_filename in args.bam_filename:
             sys.stderr.write("  %s\n  " % bam_filename)
 
             add_read_depths(chrom, fwd_array, rev_array, bam_filename)
-                
+
             sys.stderr.write("\n")
 
         # threshold values to avoid integer overflow when we store them
         threshold_large_vals(fwd_array)
         if rev_track:
             threshold_large_vals(rev_array)
-        
+
         fwd_carray[:] = fwd_array
 
         if rev_track:
             rev_carray[:] = rev_array
-    
+
     fwd_track.close()
 
     if rev_track:
@@ -160,6 +153,3 @@ def main():
 
 
 main()
-        
-        
-    
