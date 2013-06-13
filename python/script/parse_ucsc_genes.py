@@ -1,4 +1,3 @@
-import os
 import sys
 import gzip
 
@@ -13,6 +12,7 @@ GENE_TYPE_ENS = 2
 GENE_TYPE_REF = 3
 GENE_TYPE_CCDS = 4
 GENE_TYPE_FLYBASE = 5
+
 
 def merge_adjacent_exons(exons):
     new_exons = []
@@ -34,7 +34,6 @@ def write_header():
     print "\t".join(["ID", "NAME", "CHROM", "START", "END", "STRAND",
                      "EXON.STARTS", "EXON.ENDS",
                      "CDS.START", "CDS.END"])
-    
 
 
 def parse_args():
@@ -47,19 +46,18 @@ def parse_args():
 
     parser.add_argument("gene_file", metavar="GENE_FILE",
                         help="path to ucsc gene file")
-    
+
     args = parser.parse_args()
 
     return args
-    
 
 
 def main():
     args = parse_args()
-    
+
     path = args.gene_file
     filename = path.split("/")[-1]
-    
+
     if filename.startswith("known"):
         gene_type = GENE_TYPE_KNOWN
     elif filename.startswith("ens"):
@@ -86,6 +84,8 @@ def main():
 
     write_header()
 
+    skipped_chrom = []
+
     for l in f:
         tr_id += 1
         cols = l.strip().split("\t")
@@ -99,7 +99,11 @@ def main():
 
         chrom_name = cols[1]
         if not chrom_name in chrom_dict:
-            raise ValueError("unknown chromosome: %s" % chrom_name)
+            if not chrom_name in skipped_chrom:
+                sys.stderr.write("skipping unknown chromosome: %s\n"
+                                 % chrom_name)
+                skipped_chrom.append(chrom_name)
+            continue
         chrom = chrom_dict[chrom_name]
 
         if cols[2] == '+':
@@ -141,13 +145,9 @@ def main():
         tr = Transcript(name=name, exons=exons,
                         cds_start=cds_start, cds_end=cds_end, idnum=tr_id)
 
-
         print str(tr)
 
-        
-    
     f.close()
-
 
 
 main()
