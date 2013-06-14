@@ -11,6 +11,17 @@ import genome.db
 MIN_MAP_QUAL = 10
 MAX_VAL = 65535
 
+# CIGAR codes
+BAM_CMATCH = 0
+BAM_CINS = 1
+BAM_CDEL = 2
+BAM_CREF_SKIP = 3
+BAM_CSOFT_CLIP = 4
+BAM_CHARD_CLIP = 5
+BAM_CPAD = 6
+BAM_CEQUAL = 7
+BAM_CDIFF = 8
+
 
 def create_carray(track, chrom):
     atom = tables.UInt16Atom(dflt=0)
@@ -60,10 +71,23 @@ def add_read_depths(chrom, fwd_array, rev_array, bam_filename):
                                                 chrom.length))
             start = 1
 
-        if read.is_reverse:
-            rev_array[(start-1):end] += 1
-        else:
-            fwd_array[(start-1):end] += 1
+        # read pos refers to position of first mapping base, need to skip
+        # cigar ops not part of alignment or inserted wrt the reference
+        begin_match = False
+        offset = 0
+        for op, oplen in read.cigar:
+            if op in [BAM_CINS, BAM_CPAD, BAM_CSOFT_CLIP, BAM_CHARD_CLIP]:
+                continue
+            elif op in [BAM_CMATCH, BAM_CDEL, BAM_CEQUAL, BAM_CDIFF]:
+                begin_match = True
+                match_start = start - 1 + offset
+                match_end = start - 1 + offset + oplen
+                if read.is_reverse:
+                    rev_array[match_start:match_end] += 1
+                else:
+                    fwd_array[match_start:match_end] += 1
+            if begin_match:
+                offset += oplen
 
 
 def parse_args():
