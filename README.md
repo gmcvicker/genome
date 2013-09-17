@@ -1,31 +1,46 @@
-Introduction
-======
+# Introduction
 
-*genome* is a Python library for retrieval and storage of genomics data in HDF5 format.
+*genome* is a Python library for retrieval and storage of genomics data in 
+[HDF5](http://www.hdfgroup.org/HDF5/) format. It is
+a lightweight wrapper over [PyTables](http://www.pytables.org/moin).
 
-
-This repo contains the genome library and a set of utility scripts for reading and writing HDF5 files. 
+This repo contains the genome library and a set of utility scripts for reading and 
+writing [HDF5](http://www.hdfgroup.org/HDF5/) files. 
 
 The purpose of this software is to:
 * Provide a simple abstraction over PyTables for retrieval of genomics data
 * Make it possible to efficiently convert other genomics data formats to HDF5
 
-This is loosely based on the [Genomedata](http://noble.gs.washington.edu/proj/genomedata/) software
-package by [Michael Hoffman](http://noble.gs.washington.edu/~mmh1/).
+This library was inspired by and is loosely based on the 
+[Genomedata](http://noble.gs.washington.edu/proj/genomedata/) software
+by [Michael Hoffman](http://noble.gs.washington.edu/~mmh1/).
 
 This document summarizes how to setup this software system, how to retrieve data from HDF5 files, 
 and how to convert other file formats into HDF5. If you have any questions or run into any 
 difficulty, please don't hesitate to contact me!
 
 
-Setup 
-=====
+# Setup 
 
-There are 3 components that make up the system. A small python library 'genome', a small C 
+There are three components that make up the system. A small python library 'genome', a small C 
 library 'libgenome' and set of python scripts for data import and manipulation.
 
-Getting the source code
------------------------
+### Dependencies
+
+*genome* depends on PyTables, which depends on HDF5(http://www.hdfgroup.org/HDF5/), [NumPy](http://www.numpy.org/) and several other packages. 
+See the detailed [PyTables installation guide](http://pytables.github.io/usersguide/installation.html). [This 
+guide](http://assorted-experience.blogspot.com/2011/12/mac-os-x-install-pytables-and-h5py.html) for installing
+PyTables under Mac OSX.
+
+*genome* additionally depends on:
+* [Cython](http://cython.org/)
+* [ArgParse](https://code.google.com/p/argparse/) (for Python2.6 or older)
+* [pysam](https://code.google.com/p/pysam/) (for reading BAM files only)
+* [Scons](http://www.scons.org/) (for compiling, would like to replace with standard build scripts)
+
+
+### Getting the source code
+
 The first step is to obtain the source code from git. Let's assume you want to clone this repository 
 into a directory named src:
 
@@ -40,8 +55,8 @@ If at a later point you want to retrieve the latest code updates you can do the 
 		git merge origin/master
 
 
-Setting environment variables
------------------------------
+### Setting environment variables
+
 To use the code you need to update set several shell environment variables. 
 I recommend setting these variables in your ~/.bashrc or ~/.profile files using 
 something like the following:
@@ -72,8 +87,8 @@ and may not execute your ~/.bashrc. To ensure that your jobs have the correct en
 you should be able to pass a flag to your cluster submission command (e.g. the -V flag to qsub).
 
 
-Compiling the C library and building python extensions
-------------------------------------------------------
+### Compiling the C library and building python extensions
+
 I use a build system called [SCons](http://www.scons.org/) to compile my code. To compile the libgenome 
 C library type the following:
 
@@ -97,8 +112,8 @@ this might be because the LD_LIBRARY_PATH, CFLAGS, LDFLAGS environment variables
 or because the genome C library is not properly compiled.
 
 
-Retrieving Data
-===============
+# Retrieving Data
+
 You should now be ready to obtain data using the genome library. The environment variable 
 GENOME_DB tells genome.db where your database of HDF5 files is located. 
 Each .h5 file under this directory (or within subdirectories) is a "track" from which data can be 
@@ -226,8 +241,8 @@ The output from running this program looks like this:
     ...
 
 
-Importing Data
-==============
+# Importing Data
+
 A number of scripts can be used to load data into the HDF5 files. Most of these scripts will 
 take a name for a new track. The data will then be written to file with the name of the track 
 (and a .h5 postfix) under the directory pointed to by the GENOME_DB environment variable.
@@ -247,8 +262,8 @@ install argparse on your system.
 
 *Note:* The scripts that read BAM files depend on [pysam](https://code.google.com/p/pysam/). 
 
-create_track.py
----------------
+### create_track.py
+
 Takes fasta, wiggle, bedgraph, xb or tab-delimited text files as input. Data are stored in a track containing a 
 1D array for each chromosome. The imported data can currently be stored as any of the 
 following data types: int8, uint8, int16, float32. Currently create_track.py expects 
@@ -260,20 +275,20 @@ Here is an example of how to load sequence data into the database (in this case 
 
     python create_track.py --assembly dm3 --format fasta --dtype uint8 seq  ~/data/Dmel/ucsc/dm3/seq/chr*.fa.gz
 
-load_bed.py
------------
+### load_bed.py
+
 Reads features from a BED file and stores them in a HDF5 file. Data imported this way 
 are stored in a table with several columns (not as a 1D array).
 
-load_bam_read_depth.py
------------------------
+### load_bam_read_depth.py
+
 Reads BAM or SAM files and stores read depths in a track as a 1D array of unsigned 
 16 bit integers (uint16s) for each chromosome. Discards strand information but could easily 
 be modified to store forward and reverse strands separately. Requires the pysam python library. 
 BAM file must first be sorted and indexed using [samtools](http://samtools.sourceforge.net/).
  
-load_bam_5prime_ends.py
------------------------
+### load_bam_5prime_ends.py
+
 Reads BAM or SAM files and stores counts of 5' ends of reads as a 1D array of unsigned 16 bit 
 integers (uint16s) for each chromosome. Forward and reverse strands are stored as separate tracks. 
 Requires the pysam python library. BAM file must first be sorted and indexed using 
@@ -285,8 +300,8 @@ Example of use (note any number of bam files can be specified):
         /my_tracks/rev_read_counts \
         wgEncodeDataRep1.bam   wgEncodeDataRep2.bam
 
-load_bam_left_ends.py
----------------------
+### load_bam_left_ends.py
+
 Reads BAM or SAM files and stores counts of the left (lower-numbered-coordinate) ends of reads 
 as a 1D array of unsigned 16 bit integers (uint16s) for each chromosome. Forward and reverse 
 strands are stored in the same tracks. Requires the pysam python library. BAM file must first 
@@ -295,14 +310,14 @@ be sorted and indexed using samtools. Example of use:
     python load_bam_left_ends.py --assembly hg19 /my_tracks/read_counts \
         wgEncodeDataRep1.bam wgEncodeDataRep2.bam wgEncodeDataRep3.bam
 
-load_mnase_mids.py
--------------------
+### load_mnase_mids.py
+
 Estimates dyad positions from single-end or paired-end MNase-seq reads and stores dyad counts as 1D
 arrays of unsigned 8 bit integers. Data are read from a BAM file, which must first be sorted and 
 indexed using samtools. Requires the pysam python library. 
 
-load_chr.py
------------
+### load_chr.py
+
 Creates a table of chromosomes in the database. This table contains chromosome names, lengths 
 and some other information. This is the only table that is required for the genome.db software 
 to work, and it only needs to be created once. If you want to create a new database (e.g. for 
@@ -310,19 +325,23 @@ another species or on a different machine) you will have to use this script to c
 or copy an existing chromosome.h5 file.
 
 
-Other scripts
---------------
+# Other scripts
+
 Here are some other scripts that may be quite useful. They are also located in genome/python/script/db. 
 
-*list_tracks.py* - Print a list of tracks that are in the database
+#### list_tracks.py
+Print a list of tracks that are in the database
 
-*list_chromosomes.py* - Print a list the chromosomes that are in a database (and their lengths)
+#### list_chromosomes.py
+Print a list the chromosomes that are in a database (and their lengths)
 
-*combine_tracks.py* - Combine counts from 2 or more tracks into a single new track. 
+#### combine_tracks.py
+Combine counts from 2 or more tracks into a single new track. 
 Very useful for combining data from multiple individuals, multiple replicates or from the 
 forward and reverse strands.
 
-*liftover_track.py* - Copy data in a track from one assembly to another (e.g. hg19 to hg18) 
+#### liftover_track.py
+Copy data in a track from one assembly to another (e.g. hg19 to hg18) 
 using information from a UCSC liftover chain file. Here is an example of how data tracks 
 can be copied from hg19 to hg18:
 
@@ -333,10 +352,12 @@ can be copied from hg19 to hg18:
     # copy unstranded data from hg19 to hg18
     python liftover_track.py hg19 hg18 /data/ucsc/hg19/liftover/hg19ToHg18.over.chain.gz uwdnase/wgEncodeUwDnaseWi38Aln
 
-*set_track_stats.py* - Computes statistics for a track (n, mean, max, min, etc.) and stores them 
+#### set_track_stats.py
+Computes statistics for a track (n, mean, max, min, etc.) and stores them 
 as attributes for each chromosome node in the HDF5 file. Attributes stored this way can be rapidly 
 retrieved. You need to have write permissions for the track to run this script.
 
-*get_track_stats.py* - Retrieves statistics for a track that have been pre-computed using set_track_stats.py
+#### get_track_stats.py
+Retrieves statistics for a track that have been pre-computed using set_track_stats.py
 
 
