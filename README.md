@@ -26,25 +26,24 @@ library 'libgenome' and set of python scripts for data import and manipulation.
 
 Getting the source code
 -----------------------
-The first step is to obtain the source code from git. 
+The first step is to obtain the source code from git. Let's assume you want to clone this repository 
+into a directory named src:
 
-To obtain the source code do the following:
+		mkdir ~/src
+		cd ~/src
+		git clone https://github.com/gmcvicker/genome
 
-mkdir ~/src
-cd ~/src
-git clone ~gmcvicker/proj/genome
+If at a later point you want to retrieve the latest code updates you can do the following:
 
-If at a later point you want to retrieve the latest code updates from my repository you can do the following:
-
-cd ~/src/genome
-git fetch
-git merge origin/master
+		cd ~/src/genome
+		git fetch
+		git merge origin/master
 
 
 Setting environment variables
 -----------------------------
 To use the code you need to update set several shell environment variables. 
-I recommend setting these variables in your ~/.bashrc or .profile files using 
+I recommend setting these variables in your ~/.bashrc or ~/.profile files using 
 something like the following:
 
     # update your python path by adding $HOME/src/genome/python/lib to the end
@@ -154,12 +153,14 @@ The output from this program looks like this. This program normally only takes a
 If it runs very slowly this is probably because somebody else has submitted a lot
 of cluster jobs that are taxing the lustre filesystem.
 
-    [3 5 3 2 3 1 2 0 0 1 0 0 0 0 2 2 1 0 2 2 1 1 0 1 0 0 0 0 4 2 4 1 0 0 1 1 1 2 0 0 1 1 1 3 1 0 0 0 0 0 1 3 0 0 0 2 1 1 1 0 3 3 2 1 0 1 0 2 3 5 2 1 5 0 2 0 0 0 1 0 1 0 1 4 0 3 1 2 5 1 0 1 4 0 2 1 0 0 2 0 1]
-    [ 7  6  2  2  2  4  2  0  0  3  5  2  1  0  2  2  4  0  1  3  4  3 28  1  6
-      0  5  2 19  4  1  0  0  0  1  0  0  2  1  1  5  6  1  3  4  1  2  9  7  2
-      2  2  3  1  0  0  0  2  0  0  0  0  4  2  2  4  4  1  3 48  0  2  0  1  0
-      1  0  0  1  1  1  3  0  0  1  1  1  2  0  1  0  0  0  1  9  1  0  1  0 25
-    2]
+    [3 5 3 2 3 1 2 0 0 1 0 0 0 0 2 2 1 0 2 2 1 1 0 1 0 0 0 0 4 2 4 1 0 0 1 1 1 
+     2 0 0 1 1 1 3 1 0 0 0 0 0 1 3 0 0 0 2 1 1 1 0 3 3 2 1 0 1 0 2 3 5 2 1 5 0 
+     2 0 0 0 1 0 1 0 1 4 0 3 1 2 5 1 0 1 4 0 2 1 0 0 2 0 1]
+    [7  6  2  2  2  4  2  0  0  3  5  2  1  0  2  2  4  0  1  3  4  3 28  1  6
+     0  5  2 19  4  1  0  0  0  1  0  0  2  1  1  5  6  1  3  4  1  2  9  7  2
+     2  2  3  1  0  0  0  2  0  0  0  0  4  2  2  4  4  1  3 48  0  2  0  1  0
+     1  0  0  1  1  1  3  0  0  1  1  1  2  0  1  0  0  0  1  9  1  0  1  0 25
+     2]
     chr1 length is 247249719bp
     DNase cuts: 265626609
     MNase midpoints: 301957846
@@ -209,6 +210,7 @@ specified on the command line.
     track.close()
 
 The output from running this program looks like this:
+
     python get_seq.py chr12 1000000 1010000
     >chr12:1000000-1010000
     CACTCATTTCAATTCTTGACTGGGATTGGAGGATCTTTGAAGCTATCTCACGTGGCTGTT
@@ -255,6 +257,7 @@ filenames that contain the chromosome name (e.g. chr1.wig.gz, chr2.wig.gz, etc.)
 The provided C program genome/c/program/split_wig_chrs.c can be used to split wiggle files up in this way.
 
 Here is an example of how to load sequence data into the database (in this case for Drosophila melanogaster):
+
     python create_track.py --assembly dm3 --format fasta --dtype uint8 seq  ~/data/Dmel/ucsc/dm3/seq/chr*.fa.gz
 
 load_bed.py
@@ -273,8 +276,10 @@ load_bam_5prime_ends.py
 -----------------------
 Reads BAM or SAM files and stores counts of 5' ends of reads as a 1D array of unsigned 16 bit 
 integers (uint16s) for each chromosome. Forward and reverse strands are stored as separate tracks. 
-Requires the pysam python library. BAM file must first be sorted and indexed using [samtools](http://samtools.sourceforge.net/). 
+Requires the pysam python library. BAM file must first be sorted and indexed using 
+[samtools](http://samtools.sourceforge.net/). 
 Example of use (note any number of bam files can be specified):
+
     python load_bam_5prime_ends.py --assembly hg19 \
       	/my_tracks/fwd_read_counts \
         /my_tracks/rev_read_counts \
@@ -286,6 +291,7 @@ Reads BAM or SAM files and stores counts of the left (lower-numbered-coordinate)
 as a 1D array of unsigned 16 bit integers (uint16s) for each chromosome. Forward and reverse 
 strands are stored in the same tracks. Requires the pysam python library. BAM file must first 
 be sorted and indexed using samtools. Example of use:
+
     python load_bam_left_ends.py --assembly hg19 /my_tracks/read_counts \
         wgEncodeDataRep1.bam wgEncodeDataRep2.bam wgEncodeDataRep3.bam
 
@@ -316,9 +322,10 @@ Here are some other scripts that may be quite useful. They are also located in g
 Very useful for combining data from multiple individuals, multiple replicates or from the 
 forward and reverse strands.
 
-liftover_track.py - Copy data in a track from one assembly to another (e.g. hg19 to hg18) 
+*liftover_track.py* - Copy data in a track from one assembly to another (e.g. hg19 to hg18) 
 using information from a UCSC liftover chain file. Here is an example of how data tracks 
 can be copied from hg19 to hg18:
+
     # copy forward- and reverse-stranded data from hg19 to hg18
     python liftover_track.py hg19 hg18 ~/data/ucsc/hg19/liftover/hg19ToHg18.over.chain.gz \
         --rev_track uwdnase/wgEncodeUwDnaseWi38AlnRep2_rev uwdnase/wgEncodeUwDnaseWi38AlnRep2_fwd
@@ -330,6 +337,6 @@ can be copied from hg19 to hg18:
 as attributes for each chromosome node in the HDF5 file. Attributes stored this way can be rapidly 
 retrieved. You need to have write permissions for the track to run this script.
 
-get_track_stats.py - Retrieves statistics for a track that have been pre-computed using set_track_stats.py
+*get_track_stats.py* - Retrieves statistics for a track that have been pre-computed using set_track_stats.py
 
 
