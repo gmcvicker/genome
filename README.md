@@ -4,12 +4,12 @@
 [HDF5](http://www.hdfgroup.org/HDF5/) format. It is
 a lightweight wrapper over [PyTables](http://www.pytables.org/moin).
 
-This repo contains the genome library and a set of utility scripts for reading and 
+This repo contains the *genome* library and a set of utility scripts for reading and 
 writing [HDF5](http://www.hdfgroup.org/HDF5/) files. 
 
 The purpose of this software is to:
 * Provide a simple abstraction over PyTables for retrieval of genomics data
-* Make it possible to efficiently convert other genomics data formats to HDF5
+* Make it simple to efficiently convert other genomics data formats to HDF5
 
 This library was inspired by and is loosely based on the 
 [Genomedata](http://noble.gs.washington.edu/proj/genomedata/) software
@@ -19,11 +19,33 @@ This document summarizes how to setup this software system, how to retrieve data
 and how to convert other file formats into HDF5. If you have any questions or run into any 
 difficulty, please don't hesitate to contact me!
 
+### HDF5 and PyTables
 
-# Setup 
+HDF5 is a binary format designed for rapid access to huge amounts of data. 
+It is widely-adopted and platform independent. Software libraries to access HDF5 file are available in 
+C, C++, Java, Python, and Fortran90 (and possibly others). PyTables is a very nice high-level Python 
+interface for reading and writing HDF5 files. I have written a python library and a number of scripts 
+that use PyTables to create and read HDF5 files.
 
-There are three components that make up the system. A small python library 'genome', a small C 
-library 'libgenome' and set of python scripts for data import and manipulation.
+Advantages to using HDF5
+* Efficient storage of very large datasets
+* Very fast data retrieval
+* Fast random access to compressed files
+* Nice, simple Python interface (PyTables) that integrates with NumPy
+* APIs in several languages: C, C++, Java, Fortran
+* Binary files work on big- and little-endian machines
+
+Disadvantages:
+* Files are not human readable
+* PyTables does not support write-concurrency (only one process at a time can safely write to an HDF5 file)
+* Unlike MySQL and PostgreSQL, The free version of PyTables does not support indexing  (the commercial version does)
+* Using PyTables introduces several software dependencies: PyTables, NumPy, HDF5, zlib
+
+
+# Setup
+
+This repo has three components: a small python library *genome*, a small C 
+library *libgenome* and set of python scripts for data import and manipulation.
 
 ### Dependencies
 
