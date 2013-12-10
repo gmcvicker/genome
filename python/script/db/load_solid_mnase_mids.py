@@ -86,10 +86,18 @@ def count_midpoints(filename, chrom_arrays, chrom_dict,
     for l in f:        
         words = l.rstrip().split()
 
-        n_matches = int(words[8])
-        if n_matches > 1:
-            # skip read pairs that mapped to multiple locations
+        # this is either a string that gives number of matches 
+        # or a string that gives Y / N (for unique / not-unique)
+        n_match_str = words[8]
+        if n_match_str == 'N':
             continue
+        elif n_match_str == 'Y':
+            pass
+        else:
+            n_matches = int(n_match_str)
+            if n_matches > 1:
+                # skip read pairs that mapped to multiple locations
+                continue
 
         chrom_name = "chr" + words[2]
 
