@@ -20,12 +20,16 @@ class TrackStats(object):
         if str(vals.dtype).startswith('float'):
             nan_vals = np.isnan(vals)
             self.n_nan = np.sum(nan_vals)
-        else:
-            nan_vals = np.zeros(self.n, dtype=np.bool)
 
-        self.min = np.min(vals[~nan_vals])
-        self.max = np.max(vals[~nan_vals])
-        self.sum = np.sum(vals[~nan_vals])
+            if self.n_nan < self.n:
+                self.min = np.min(vals[~nan_vals])
+                self.max = np.max(vals[~nan_vals])
+                self.sum = np.sum(vals[~nan_vals])
+        else:
+            self.min = np.min(vals)
+            self.max = np.max(vals)
+            self.sum = np.sum(vals)
+
         
 
     def add(self, other):
