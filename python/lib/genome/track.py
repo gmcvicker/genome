@@ -115,9 +115,8 @@ class Track(object):
             if hasattr(chrom, "length"):
                 array = np.empty(chrom.length, dtype=np.float32)
             else:
-                chrom_d
                 raise ValueError("cannot create array for missing chromosome "
-                                 "of unknown length for track '%s'" % track.name)
+                                 "of unknown length for track '%s'" % self.name)
 
             array[:] = np.nan
 
