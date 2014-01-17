@@ -15,7 +15,7 @@ def parse_args():
                                      "been stored as attributes using "
                                      "set_track_stats.py")
 
-    parser.add_argument("--assembly", metavar="ASSEMBLY", default="hg18",
+    parser.add_argument("--assembly", metavar="ASSEMBLY", default=None,
                         help="name of assembly (e.g. hg18)")
 
     parser.add_argument("--verbose", action="store_true",

@@ -97,7 +97,7 @@ def parse_options(args):
                                  "txtfile"),
                         default="wiggle", help="format of input files")
 
-    parser.add_argument("-a", "--assembly", default="hg18",
+    parser.add_argument("-a", "--assembly", default=None,
                         help='genome assembly to create new '
                         'track for (e.g. hg18)')
 

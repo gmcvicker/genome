@@ -14,7 +14,7 @@ def parse_args():
                                      "as track attributes. These can be "
                                      "rapidly retrieved by other programs.")
 
-    parser.add_argument("--assembly", metavar="ASSEMBLY", default="hg18",
+    parser.add_argument("--assembly", metavar="ASSEMBLY", default=None,
                         help="name of assembly (e.g. hg18)")
 
     parser.add_argument("track_name", metavar="TRACK_NAME",

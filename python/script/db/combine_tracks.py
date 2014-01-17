@@ -97,7 +97,7 @@ def parse_args():
                         choices=("uint8", "uint16"), default="uint8",
                         help="datatype of combined track")
 
-    parser.add_argument('--assembly', help="assembly to use", default="hg18")
+    parser.add_argument('--assembly', help="assembly to use", default=None)
 
     parser.add_argument("combined_track", action="store",
                         help="name of track to store combined counts in")
