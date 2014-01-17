@@ -4,6 +4,7 @@ from Cython.Distutils import build_ext
 import numpy
 
 ext_modules = [Extension("dist", ["dist.pyx"]),
+               Extension("dseg", ["dseg.pyx"]),
                Extension("kmer", ["kmer.pyx"]),
                Extension("wig", ["wig.pyx"],
                          libraries=["genome"])]
