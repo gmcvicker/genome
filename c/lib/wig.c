@@ -432,17 +432,49 @@ unsigned char *wig_read_uint8(const char *filename, const long chr_len) {
 
 
 
+/**
+ * Writes uint8 values in wiggle format to provided gzFile
+ */
+void wig_gzf_write_uint8(gzFile gzf, const unsigned char *vals,
+			 const char *chr_name, const long chr_len) {
+  long i;
 
+  gzprintf(gzf, "fixedStep chrom=%s start=1 step=1\n", chr_name);
+  for(i = 0; i < chr_len; i++) {
+    if((i % 1000000) == 0) {
+      fprintf(stderr, ".");
+    }
+    gzprintf(gzf, "%d\n", vals[i]);
+  }
+  
+}
 
 
 
 /**
- * Writes int8 values for an entire chromosome to a gzipped wiggle file.
+ * Writes gzipped uint8 values in wiggle format to the file stream
+ * associated with provided file descriptor.
+ */
+void wig_fd_write_uint8(int fd, const unsigned char *vals,
+			const char *chr_name, const long chr_len) {
+  gzFile gzf;
+  gzf = gzdopen(fd, "wb");
+  if(gzf == NULL) {
+    my_err("%s:%d:unable to open file associated with provided descriptor",
+	   __FILE__, __LINE__);
+  }
+  wig_gzf_write_uint8(gzf, vals, chr_name, chr_len);
+  fprintf(stderr, "\n");
+}
+
+
+/**
+ * Writes int8 values for an entire chromosome to a gzipped wiggle file
+ * with the provided filename.
  */
 void wig_write_uint8(const char *filename, const unsigned char *vals,
 		     const char *chr_name, const long chr_len) {
   gzFile gzf;
-  long i;
   char *out_filename;
 
   if(!util_has_gz_ext(filename)) {
@@ -453,19 +485,10 @@ void wig_write_uint8(const char *filename, const unsigned char *vals,
   }
   
   gzf = util_must_gzopen(out_filename, "wb");
-
   fprintf(stderr, "writing to wig file '%s'\n", out_filename);
-
-  gzprintf(gzf, "fixedStep chrom=%s start=1 step=1\n", chr_name);
-  for(i = 0; i < chr_len; i++) {
-    if((i % 1000000) == 0) {
-      fprintf(stderr, ".");
-    }
-    gzprintf(gzf, "%d\n", vals[i]);
-  }
-  gzclose(gzf);
-
+  wig_gzf_write_uint8(gzf, vals, chr_name, chr_len);
   fprintf(stderr, "\n");
+  gzclose(gzf);
   my_free(out_filename);
 }
 
