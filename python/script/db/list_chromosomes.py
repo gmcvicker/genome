@@ -35,12 +35,13 @@ def parse_args():
                         default=False,
                         help="do not include chromosome X")
     
-
     parser.add_argument('--all', action='store_true',
                         help="include all chromosomes in output",
                         default=False)
 
-    
+    parser.add_argument("--ids", action="store_true",
+                        default=False,
+                        help="print numeric chromosome IDs as well as names")
     
     return parser.parse_args()
 
@@ -62,7 +63,10 @@ def main():
                                           get_mito=args.mito)
 
     for chrom in chromosomes:
-        print "%s\t%d" % (chrom.name, chrom.length)
+        if args.ids:
+            print "%d\t%s\t%d" % (chrom.idnum, chrom.name, chrom.length)
+        else:
+            print "%s\t%d" % (chrom.name, chrom.length)
         
 
 main()
