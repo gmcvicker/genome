@@ -6,7 +6,7 @@ Import('env')
 env.PrependENVPath("PATH", os.environ['PATH'])
 
 if 'PKG_CONFIG_PATH' in os.environ:
-    env.PrepenENVPath('PKG_CONFIG_PATH', os.environ['PKG_CONFIG_PATH'])
+    env.PrependENVPath('PKG_CONFIG_PATH', os.environ['PKG_CONFIG_PATH'])
 env.ParseConfig("pkg-config --cflags --libs glib-2.0")
 
 srcfiles = ['util.c', 'wig.c', 'txtfile.c', 'aln.c',
