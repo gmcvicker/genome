@@ -14,6 +14,15 @@ class TrackStats(object):
         self.max = None
 
 
+    def mean(self):
+        """Calculates mean of sites that are not nan"""
+        n = self.n - self.n_nan
+        if n == 0:
+            return np.inf
+        
+        return self.sum / float(n)
+
+
     def set_from_vals(self, vals):
         self.n = vals.size
 

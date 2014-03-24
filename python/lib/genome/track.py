@@ -123,8 +123,6 @@ class Track(object):
         return self.__get_np_slice(array, start, end)
 
         
-        
-
 
     def get_seq_str(self, chrom, start=None, end=None):
         """Returns a string of sequence of the specified chromosome
