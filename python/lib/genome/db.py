@@ -1,5 +1,6 @@
 import os, sys, re
 import tables
+import numpy as np
 
 from genome.track import Track
 import genome.trackstat
@@ -107,10 +108,43 @@ class GenomeDB():
         return Track(track_name, track_path, mode)
 
 
+
+    def init_track(self, track, data_type=np.float32, dflt=None):
+        """initializes a track by creating arrays for every chromosome
+        and setting them to a default value. Unless specified, the default
+        value is nan for floats, and 0 for ints/uints"""
+        dt = np.dtype(data_type)
+
+        zlib_filter = tables.Filters(complevel=1, complib="zlib")
+        
+        if dflt is None:
+            if np.issubdtype(dt, np.float):
+                dflt = np.nan
+            elif np.issubdtype(dt, np.int):
+                dflt = 0
+            elif np.issubdtype(dt, np.unsignedinteger):
+                dflt = 0
+            else:
+                raise ValueError("don't know how initialize track with datatype "
+                                 "%s" % dt.name)
+
+        for chrom in self.get_all_chromosomes():
+            shape = [chrom.length]
+            atom = tables.Atom.from_dtype(dt, dflt=dflt)
+            track.h5f.createCArray(track.h5f.root, chrom.name, atom, shape, 
+                                   filters=zlib_filter)
+            
+            
+
     def get_track_stat(self, track):
         """Returns a TrackStat object containing statistics for an
         entire track (mean, max, sum, etc.)"""
         return genome.trackstat.get_stats(self, track)
+
+
+    def set_track_stat(self, track):
+        """computes and sets track statistics on the provided track object"""
+        genome.trackstat.set_stats(self, track)
 
         
     def list_tracks(self, subdir=None):
