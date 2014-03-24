@@ -1,6 +1,6 @@
 # Introduction
 
-*genome* is a Python library for retrieval and storage of genomics data in 
+This repo contains a Python library, *genome*, for retrieval and storage of genomics data in 
 [HDF5](http://www.hdfgroup.org/HDF5/) format. It is
 a lightweight wrapper over [PyTables](http://www.pytables.org/moin).
 
@@ -9,7 +9,7 @@ writing [HDF5](http://www.hdfgroup.org/HDF5/) files.
 
 The purpose of this software is to:
 * Provide a simple abstraction over PyTables for retrieval of genomics data
-* Make it simple to efficiently convert other genomics data formats to HDF5
+* Make it simple to convert other genomics data formats to HDF5
 
 This library was inspired by and is loosely based on the 
 [Genomedata](http://noble.gs.washington.edu/proj/genomedata/) software
@@ -64,7 +64,7 @@ PyTables under Mac OSX.
 ### Getting the source code
 
 The first step is to obtain the source code from git. Let's assume you want to clone this repository 
-into a directory named src:
+into a directory named ~/src:
 
 		mkdir ~/src
 		cd ~/src
@@ -99,7 +99,7 @@ something like the following:
     export GENOME_DB=/data/share/genome_db/
     
     # scripts will use this genome assembly by default 
-    export GENOME_ASSEMBLY=hg18
+    export GENOME_ASSEMBLY=hg19
 
 Make sure that you remember to set these variables after adding them to your .bashrc for the first time. 
 You can login again, or do source ~/.bashrc
@@ -118,7 +118,7 @@ C library type the following:
     scons
 
 
-The genome library using [Cython](http://cython.org/) to create C extensions for python. 
+The genome library uses [Cython](http://cython.org/) to create C extensions for python. 
 To build these extensions do the following:
 
     # build C extensions that are part of genome library
@@ -132,6 +132,102 @@ To build these extensions do the following:
 This may give some warnings, which are OK. If you get errors that indicate the build failed, 
 this might be because the LD_LIBRARY_PATH, CFLAGS, LDFLAGS environment variables are set incorrectly, 
 or because the genome C library is not properly compiled.
+
+
+
+# Importing Data
+
+A number of scripts can be used to load data into the HDF5 files. Most of these scripts will 
+take a name for a new track. The data will then be written to file with the name of the track 
+(and a .h5 postfix) under the directory pointed to by the GENOME_DB environment variable.
+
+Subdirectories are automatically created for tracks. For example, if you create a new track called 
+dnase/new_dnase_track this will create a new HDF5 file named 
+$GENOME_DB/$GENOME_ASSEMBLY/dnase/new_dnase_track.h5. These scripts will report an error if you 
+try to write over an existing track with the same name. If such a file exists you will need to remove it manually.
+
+The scripts to convert files into HDF5 are located in genome/python/script/db. The 
+create_track.py script is the most flexible, and it can take several different 
+file formats as input. The following summarizes the scripts can be used to import different types of data.
+
+*Note:* Many of these scripts require the [argparse](http://docs.python.org/2/howto/argparse.html) module. 
+argparse is part of python2.7, but if you are using python2.6 or earlier then you will have to 
+install argparse on your system.
+
+*Note:* The scripts that read BAM files depend on [pysam](https://code.google.com/p/pysam/). 
+
+### Creating a new database
+
+A new database needs only one track, the chromosome track (which is actually more a table than a track). 
+This can be created using the load_chr.py script described below. It may also be desirable to load a genome
+sequence track. An example of loading a genome sequence from fasta files is given in the
+create_track.py section below.
+
+
+### load_chr.py
+
+Creates a table of chromosomes in the database. This table contains chromosome names, lengths 
+and some other information. This is the only table that is required for the libary to work, and it 
+only needs to be created once. If you want to create a new database (e.g. for 
+another species or on a different machine) you will have to use this script to create a new table, 
+or copy an existing chromosome.h5 file. The load_chr.py script takes a chromInfo.txt.gz file as
+input. These can be downloaded from the UCSC genome browser.
+
+
+### create_track.py
+
+Takes fasta, wiggle, bedgraph, xb or tab-delimited text files as input. Data are stored in a track containing a 
+1D array for each chromosome. The imported data can currently be stored as any of the 
+following data types: int8, uint8, int16, float32. Currently create_track.py expects 
+fasta, wiggle, bedgraph and text files to be split into separate chromosomes with 
+filenames that contain the chromosome name (e.g. chr1.wig.gz, chr2.wig.gz, etc.). 
+The provided C program genome/c/program/split_wig_chrs.c can be used to split wiggle files up in this way.
+
+Here is an example of how to load sequence data into the database (in this case for Drosophila melanogaster):
+
+    python create_track.py --assembly dm3 --format fasta --dtype uint8 seq  ~/data/Dmel/ucsc/dm3/seq/chr*.fa.gz
+
+### load_bed.py
+
+Reads features from a BED file and stores them in a HDF5 file. Data imported this way 
+are stored in a table with several columns (not as a 1D array).
+
+### load_bam_read_depth.py
+
+Reads BAM or SAM files and stores read depths in a track as a 1D array of unsigned 
+16 bit integers (uint16s) for each chromosome. Discards strand information but could easily 
+be modified to store forward and reverse strands separately. Requires the pysam python library. 
+BAM file must first be sorted and indexed using [samtools](http://samtools.sourceforge.net/).
+ 
+### load_bam_5prime_ends.py
+
+Reads BAM or SAM files and stores counts of 5' ends of reads as a 1D array of unsigned 16 bit 
+integers (uint16s) for each chromosome. Forward and reverse strands are stored as separate tracks. 
+Requires the pysam python library. BAM file must first be sorted and indexed using 
+[samtools](http://samtools.sourceforge.net/). 
+Example of use (note any number of bam files can be specified):
+
+    python load_bam_5prime_ends.py --assembly hg19 \
+      	/my_tracks/fwd_read_counts \
+        /my_tracks/rev_read_counts \
+        wgEncodeDataRep1.bam   wgEncodeDataRep2.bam
+
+### load_bam_left_ends.py
+
+Reads BAM or SAM files and stores counts of the left (lower-numbered-coordinate) ends of reads 
+as a 1D array of unsigned 16 bit integers (uint16s) for each chromosome. Forward and reverse 
+strands are stored in the same tracks. Requires the pysam python library. BAM file must first 
+be sorted and indexed using samtools. Example of use:
+
+    python load_bam_left_ends.py --assembly hg19 /my_tracks/read_counts \
+        wgEncodeDataRep1.bam wgEncodeDataRep2.bam wgEncodeDataRep3.bam
+
+### load_mnase_mids.py
+
+Estimates dyad positions from single-end or paired-end MNase-seq reads and stores dyad counts as 1D
+arrays of unsigned 8 bit integers. Data are read from a BAM file, which must first be sorted and 
+indexed using samtools. Requires the pysam python library. 
+
 
 
 # Retrieving Data
@@ -262,89 +358,6 @@ The output from running this program looks like this:
     GTATTTTTAGTAGAGACGGGGTTTCACCATGTTGGCCAAACTGGTCTCAAACTCCTGACC
     ...
 
-
-# Importing Data
-
-A number of scripts can be used to load data into the HDF5 files. Most of these scripts will 
-take a name for a new track. The data will then be written to file with the name of the track 
-(and a .h5 postfix) under the directory pointed to by the GENOME_DB environment variable.
-
-Subdirectories are automatically created for tracks. For example, if you create a new track called 
-dnase/new_dnase_track this will create a new HDF5 file named 
-$GENOME_DB/$GENOME_ASSEMBLY/dnase/new_dnase_track.h5. These scripts will report an error if you 
-try to write over an existing track with the same name. If such a file exists you will need to remove it manually.
-
-The scripts to convert files into HDF5 are located in genome/python/script/db. The 
-create_track.py script is the most flexible, and it can take several different 
-file formats as input. The following summarizes the scripts can be used to import different types of data.
-
-*Note:* Many of these scripts require the [argparse](http://docs.python.org/2/howto/argparse.html) module. 
-argparse is part of python2.7, but if you are using python2.6 or earlier then you will have to 
-install argparse on your system.
-
-*Note:* The scripts that read BAM files depend on [pysam](https://code.google.com/p/pysam/). 
-
-### create_track.py
-
-Takes fasta, wiggle, bedgraph, xb or tab-delimited text files as input. Data are stored in a track containing a 
-1D array for each chromosome. The imported data can currently be stored as any of the 
-following data types: int8, uint8, int16, float32. Currently create_track.py expects 
-fasta, wiggle, bedgraph and text files to be split into separate chromosomes with 
-filenames that contain the chromosome name (e.g. chr1.wig.gz, chr2.wig.gz, etc.). 
-The provided C program genome/c/program/split_wig_chrs.c can be used to split wiggle files up in this way.
-
-Here is an example of how to load sequence data into the database (in this case for Drosophila melanogaster):
-
-    python create_track.py --assembly dm3 --format fasta --dtype uint8 seq  ~/data/Dmel/ucsc/dm3/seq/chr*.fa.gz
-
-### load_bed.py
-
-Reads features from a BED file and stores them in a HDF5 file. Data imported this way 
-are stored in a table with several columns (not as a 1D array).
-
-### load_bam_read_depth.py
-
-Reads BAM or SAM files and stores read depths in a track as a 1D array of unsigned 
-16 bit integers (uint16s) for each chromosome. Discards strand information but could easily 
-be modified to store forward and reverse strands separately. Requires the pysam python library. 
-BAM file must first be sorted and indexed using [samtools](http://samtools.sourceforge.net/).
- 
-### load_bam_5prime_ends.py
-
-Reads BAM or SAM files and stores counts of 5' ends of reads as a 1D array of unsigned 16 bit 
-integers (uint16s) for each chromosome. Forward and reverse strands are stored as separate tracks. 
-Requires the pysam python library. BAM file must first be sorted and indexed using 
-[samtools](http://samtools.sourceforge.net/). 
-Example of use (note any number of bam files can be specified):
-
-    python load_bam_5prime_ends.py --assembly hg19 \
-      	/my_tracks/fwd_read_counts \
-        /my_tracks/rev_read_counts \
-        wgEncodeDataRep1.bam   wgEncodeDataRep2.bam
-
-### load_bam_left_ends.py
-
-Reads BAM or SAM files and stores counts of the left (lower-numbered-coordinate) ends of reads 
-as a 1D array of unsigned 16 bit integers (uint16s) for each chromosome. Forward and reverse 
-strands are stored in the same tracks. Requires the pysam python library. BAM file must first 
-be sorted and indexed using samtools. Example of use:
-
-    python load_bam_left_ends.py --assembly hg19 /my_tracks/read_counts \
-        wgEncodeDataRep1.bam wgEncodeDataRep2.bam wgEncodeDataRep3.bam
-
-### load_mnase_mids.py
-
-Estimates dyad positions from single-end or paired-end MNase-seq reads and stores dyad counts as 1D
-arrays of unsigned 8 bit integers. Data are read from a BAM file, which must first be sorted and 
-indexed using samtools. Requires the pysam python library. 
-
-### load_chr.py
-
-Creates a table of chromosomes in the database. This table contains chromosome names, lengths 
-and some other information. This is the only table that is required for the genome.db software 
-to work, and it only needs to be created once. If you want to create a new database (e.g. for 
-another species or on a different machine) you will have to use this script to create a new table, 
-or copy an existing chromosome.h5 file.
 
 
 # Other scripts
