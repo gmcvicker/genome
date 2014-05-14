@@ -27,16 +27,16 @@ def check_open(filename, mode="r"):
     if mode.startswith("w") and os.path.exists(filename):
         raise IOError("file %s already exists" % filename)
 
-    if mode == "w":
+    if mode == "w" or mode == "wb":
         if filename.endswith(".gz"):
+            # create a gzipped file
             mode = "wb"
+            return gzip.open(filename, mode)
     elif mode.startswith("r"):
         if is_gzipped(filename):
+            # open a gzipped file
             mode = "rb"
-        else:
-            mode = "r"
-    
-        return gzip.open(filename, mode)
+            return gzip.open(filename, mode)
 
     return open(filename, mode)
 
