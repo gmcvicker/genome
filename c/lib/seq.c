@@ -53,6 +53,8 @@ Seq *seq_new() {
 static int read_fasta_header(Seq *seq, gzFile f) {
   int hdr_idx = 0;
   int truncated = FALSE;
+  int errnum;
+
   char c;
 
   /* expect first character to be '>' */
@@ -63,7 +65,9 @@ static int read_fasta_header(Seq *seq, gzFile f) {
       return 0;
     }
     if(c == -1) {
-      my_err("%s:%d: failed to read from fasta file\n", __FILE__, __FILE__);
+      const char *err = gzerror(f, &errnum);
+      my_err("%s:%d: failed to read from fasta file: %s (errnum=%d)\n",
+	     __FILE__, __LINE__, err, errnum);
     } else {
       my_err("%s:%d: expected fasta record to start with '>' not \\%d", 
 	     __FILE__, __LINE__, c);
