@@ -122,9 +122,9 @@ def parse_chromosomes(filename):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--assembly", default='hg18',
+    parser.add_argument("--assembly", default=None,
                         help="assembly to create chromosome table for"
-                        " (e.g. hg18)")
+                        " (e.g. hg19)")
 
     parser.add_argument("chrom_file",
                         help="path to UCSC chromInfo.txt.gz file")
