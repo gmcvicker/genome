@@ -125,6 +125,25 @@ void seq_read_str(Seq *seq, char *seq_str) {
 
 
 /**
+ * Reads a single FASTA record from the file with the provided name.
+ * Returns length of read sequence, or -1 on failure.
+ */
+long seq_read_fasta_from_file(Seq *seq, const char *filename) {
+  gzFile f;
+  long seq_len;
+  
+
+  f = util_must_gzopen(filename, "rb");
+
+  seq_len = seq_read_fasta_record(seq, f);
+
+  gzclose(f);
+
+  return seq_len;
+}
+
+
+/**
  * Reads the next fasta record from a file into the provided sequence,
  * expanding the sequence buffer as necessary. Returns number of
  * bases in sequence if sequence was read or -1 if at the end of the file.

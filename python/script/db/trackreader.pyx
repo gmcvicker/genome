@@ -4,11 +4,6 @@ import sys, re, gzip
 cimport numpy as np
 
 
-cdef extern from "zlib.h":
-    ctypedef void * gzFile
-    gzFile gzopen(char *filename, char *mode)
-    gzclose(gzFile f)
-
 
     
 cdef extern from "seq.h":
@@ -16,7 +11,7 @@ cdef extern from "seq.h":
         pass
     
     Seq *seq_new()
-    long seq_read_fasta_record(Seq *seq, gzFile f)
+    long seq_read_fasta_from_file(Seq *seq, const char *filename);
     char *seq_get_seqstr(Seq *seq)
     void seq_free(Seq *seq)
 
@@ -218,17 +213,11 @@ def read_fasta(filename, chrom_len):
 
     cdef char *c_str
     cdef Seq *seq
-    cdef gzFile gzf
-    
-    gzf = gzopen(filename, "rb")
-
-    if not gzf:
-        raise IOError("could not open file %s\n" % filename)
     
     seq = seq_new()
     
     sys.stderr.write("reading FASTA from file %s\n" % filename)
-    seq_len = seq_read_fasta_record(seq, gzf)
+    seq_len = seq_read_fasta_from_file(seq, filename)
 
     if seq_len != chrom_len:
         raise ValueError("expected sequence length to be %d, but "
@@ -237,8 +226,7 @@ def read_fasta(filename, chrom_len):
     c_str = seq_get_seqstr(seq)
     seq_free(seq)
 
-    sys.stderr.write("copying seq memory\n")
-    
+    sys.stderr.write("copying seq memory\n")    
     memcpy(result.data, c_str, chrom_len * sizeof(char))
     free(c_str)
 

@@ -26,6 +26,7 @@ typedef struct {
 Seq *seq_new(void);
 void seq_expand(Seq *seq);
 void seq_read_str(Seq *seq, char *seq_str);
+long seq_read_fasta_from_file(Seq *seq, const char *filename);
 long seq_read_fasta_record(Seq *seq, gzFile f);
 void seq_write_fasta_record(Seq *seq, gzFile f);
 void seq_rev(Seq *fwd_seq);
