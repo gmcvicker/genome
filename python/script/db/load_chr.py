@@ -142,7 +142,7 @@ def main():
     gdb = genome.db.GenomeDB(assembly=args.assembly)
 
     sys.stderr.write("creating chromosome table for %s\n" %
-                     args.assembly)
+                     gdb.assembly)
     track = gdb.create_track("chromosome")
 
     chrom_table = track.h5f.createTable("/", 'chromosome', ChromDesc,

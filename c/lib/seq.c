@@ -62,8 +62,12 @@ static int read_fasta_header(Seq *seq, gzFile f) {
       /* we've reached the end of the file */
       return 0;
     }
-    my_err("%s:%d: expected fasta record to start with '>' not \\%d", 
-	   __FILE__, __LINE__, c);
+    if(c == -1) {
+      my_err("%s:%d: failed to read from fasta file\n", __FILE__, __FILE__);
+    } else {
+      my_err("%s:%d: expected fasta record to start with '>' not \\%d", 
+	     __FILE__, __LINE__, c);
+    }
   }
 
   /* fill in header */
@@ -118,20 +122,23 @@ void seq_read_str(Seq *seq, char *seq_str) {
 
 /**
  * Reads the next fasta record from a file into the provided sequence,
- * expanding the sequence buffer as necessary. Returns 1 if the
- * sequence was read or 0 if at the end of the file.
+ * expanding the sequence buffer as necessary. Returns number of
+ * bases in sequence if sequence was read or -1 if at the end of the file.
  */
-int seq_read_fasta_record(Seq *seq, gzFile f) {
+long seq_read_fasta_record(Seq *seq, gzFile f) {
   long seq_idx;
   char c;
 
+  fprintf(stderr, "reading from fasta file\n");
+
+  
   if(!read_fasta_header(seq, f)) {
     seq->len = 0;
     seq->c.start = 0;
     seq->c.end = 0;
     seq->c.chr = NULL;
     seq->c.seqname = NULL;
-    return 0;
+    return -1;
   }
 
   /* read fasta sequence */
@@ -162,8 +169,10 @@ int seq_read_fasta_record(Seq *seq, gzFile f) {
   seq->c.end = seq->len;
   seq->c.chr = NULL;
   seq->c.seqname = NULL;
+
+  fprintf(stderr, "read %ld bp of sequence\n", seq->len);
   
-  return 1;
+  return seq->len;
 }
 
 

@@ -9,12 +9,14 @@ cdef extern from "zlib.h":
     gzFile gzopen(char *filename, char *mode)
     gzclose(gzFile f)
 
-cdef extern from "seq.h":
-    struct Seq:
-        pass
 
+    
+cdef extern from "seq.h":
+    ctypedef struct Seq:
+        pass
+    
     Seq *seq_new()
-    int seq_read_fasta_record(Seq *seq, gzFile f)
+    long seq_read_fasta_record(Seq *seq, gzFile f)
     char *seq_get_seqstr(Seq *seq)
     void seq_free(Seq *seq)
 
@@ -45,7 +47,7 @@ cdef extern from "string.h":
 
 
 cdef extern from "xbf.h":
-    struct xblist_t:
+    ctypedef struct xblist_t:
         pass
 
     xblist_t *xb_load_mmap(char *filename)
@@ -219,11 +221,24 @@ def read_fasta(filename, chrom_len):
     cdef gzFile gzf
     
     gzf = gzopen(filename, "rb")
+
+    if not gzf:
+        raise IOError("could not open file %s\n" % filename)
+    
     seq = seq_new()
-    seq_read_fasta_record(seq, gzf)
+    
+    sys.stderr.write("reading FASTA from file %s\n" % filename)
+    seq_len = seq_read_fasta_record(seq, gzf)
+
+    if seq_len != chrom_len:
+        raise ValueError("expected sequence length to be %d, but "
+                         "read %d bp\n" % (chrom_len, seq_len))
+    
     c_str = seq_get_seqstr(seq)
     seq_free(seq)
 
+    sys.stderr.write("copying seq memory\n")
+    
     memcpy(result.data, c_str, chrom_len * sizeof(char))
     free(c_str)
 
