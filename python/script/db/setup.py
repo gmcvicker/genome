@@ -4,9 +4,9 @@ from Cython.Distutils import build_ext
 import numpy
 
 ext_modules = [Extension("trackreader", ["trackreader.pyx"],
-                         libraries=["genome"]),
+                         libraries=["genome", "z"]),
                Extension("seq", ["seq.pyx"],
-                         libraries=["genome"])]
+                         libraries=["genome", "z"])]
 
 setup(
   name = 'track file parser',
