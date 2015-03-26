@@ -11,7 +11,7 @@ cdef extern from "seq.h":
         pass
     
     Seq *seq_new()
-    long seq_read_fasta_from_file(Seq *seq, const char *filename);
+    long seq_read_fasta_from_file(Seq *seq, const char *filename)
     char *seq_get_seqstr(Seq *seq)
     void seq_free(Seq *seq)
 
