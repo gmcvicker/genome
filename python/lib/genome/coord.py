@@ -585,29 +585,29 @@ if __name__ == "__main__":
 
     coords = [coord1, coord2, coord3, coord4]
 
-    print "NO-STRAND SORTING:"
+    print("NO-STRAND SORTING:")
     sort_coords(coords, use_strand=False)
     for c in coords:
-        print "  " + str(c)
+        print("  " + str(c))
 
-    print "overlaps:"
+    print("overlaps:")
     overlaps = get_overlaps(coords, coords)
     for coord, ov_list in zip(coords, overlaps):
-        print "  " + str(coord) + ":"
+        print("  " + str(coord) + ":")
         for ov in ov_list:
-            print "    " + str(ov)
+            print("    " + str(ov))
 
-    print "STRAND SORTING:"
+    print("STRAND SORTING:")
     sort_coords(coords, use_strand=True)
     for c in coords:
-        print "  " + str(c)
+        print("  " + str(c))
 
-    print "overlaps:"
+    print("overlaps:")
     overlaps = get_overlaps(coords, coords, use_strand=True)
     for coord, ov_list in zip(coords, overlaps):
-        print "  " + str(coord) + ":"
+        print("  " + str(coord) + ":")
         for ov in ov_list:
-            print "    " + str(ov)
+            print("    " + str(ov))
 
 
     # test with a numpy array
@@ -623,21 +623,21 @@ if __name__ == "__main__":
 
     coords2 = coords1.copy()
 
-    print "\nNUMPY ARRAY COORDS:"
-    print "NO-STRAND SORTING"
+    print("\nNUMPY ARRAY COORDS:")
+    print("NO-STRAND SORTING")
     coords1.sort(order=('chromosome_id', 'start'))
     coords2.sort(order=('chromosome_id', 'start'))
     overlaps = get_np_overlaps(coords1, coords2, use_strand=False)
     for i in range(coords1.size):
-        print "%s:\n  %s"  % (str(coords1[i]), str(overlaps[i]))
+        print("%s:\n  %s"  % (str(coords1[i]), str(overlaps[i])))
     
-    print "\nNUMPY ARRAY COORDS:"
-    print "STRAND SORTING"    
+    print("\nNUMPY ARRAY COORDS:")
+    print("STRAND SORTING")
     coords1.sort(order=('chromosome_id', 'strand', 'start'))
     coords2.sort(order=('chromosome_id', 'strand', 'start'))
     overlaps = get_np_overlaps(coords1, coords2, use_strand=True)
     for i in range(coords1.size):
-        print "%s:\n  %s"  % (str(coords1[i]), str(overlaps[i]))
+        print("%s:\n  %s"  % (str(coords1[i]), str(overlaps[i])))
 
 
     

@@ -23,6 +23,6 @@ tracknames.sort()
 
 for trackname in tracknames:
     if args.paths:
-        print gdb.get_track_path(trackname)
+        print(gdb.get_track_path(trackname))
     else:
-        print trackname
+        print(trackname)

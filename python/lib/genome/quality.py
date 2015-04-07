@@ -20,6 +20,6 @@ if __name__ == "__main__":
     ascii_str = qual_str_to_codes(qual_str)
     new_qual_str = qual_codes_to_str(ascii_str)
     
-    print "original qual str: " + qual_str
-    print "ascii quals str: " + ascii_str
-    print "new qual str: " + new_qual_str
+    print("original qual str: " + qual_str)
+    print("ascii quals str: " + ascii_str)
+    print("new qual str: " + new_qual_str)

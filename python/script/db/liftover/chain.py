@@ -226,10 +226,10 @@ if __name__ == "__main__":
     chain_list = read_chain_file(liftover_path, gdb18, gdb19)
 
     for c in chain_list:
-        print str(c)
+        print(str(c))
 
         for blk in c.blocks:
-            print "  " + str(blk)
+            print("  " + str(blk))
             
     
         
