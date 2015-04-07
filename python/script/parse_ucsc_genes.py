@@ -31,9 +31,9 @@ def merge_adjacent_exons(exons):
 
 
 def write_header():
-    print "\t".join(["ID", "NAME", "CHROM", "START", "END", "STRAND",
+    print("\t".join(["ID", "NAME", "CHROM", "START", "END", "STRAND",
                      "EXON.STARTS", "EXON.ENDS",
-                     "CDS.START", "CDS.END"])
+                     "CDS.START", "CDS.END"]))
 
 
 def parse_args():
@@ -145,7 +145,7 @@ def main():
         tr = Transcript(name=name, exons=exons,
                         cds_start=cds_start, cds_end=cds_end, idnum=tr_id)
 
-        print str(tr)
+        print(str(tr))
 
     f.close()
 

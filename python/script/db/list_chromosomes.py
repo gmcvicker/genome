@@ -64,9 +64,9 @@ def main():
 
     for chrom in chromosomes:
         if args.ids:
-            print "%d\t%s\t%d" % (chrom.idnum, chrom.name, chrom.length)
+            print("%d\t%s\t%d" % (chrom.idnum, chrom.name, chrom.length))
         else:
-            print "%s\t%d" % (chrom.name, chrom.length)
+            print("%s\t%d" % (chrom.name, chrom.length))
         
 
 main()

@@ -426,5 +426,5 @@ if __name__ == "__main__":
     trs = read_transcripts(sys.argv[1], chrom_dict)
 
     for tr in trs:
-        print str(tr)
+        print(str(tr))
 

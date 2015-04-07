@@ -66,19 +66,19 @@ if __name__ == "__main__":
 
     # chr1:995669 should convert to chr1:1005806
     new_coord = lifter.convert("chr1", 995669, 1)
-    print new_coord
+    print(new_coord)
 
     # chr1:1007060 should convert to chr1:1017197
     new_coord = lifter.convert("chr1", 1007060, 1)
-    print new_coord
+    print(new_coord)
 
     # chr22:15455353 should convert to chr22:17075353
     new_coord = lifter.convert("chr22", 15455353, 1)
-    print new_coord
+    print(new_coord)
     
     # chr2:1203295 should be deleted in new
     new_coord = lifter.convert("chr2", 1203295, 1)    
-    print new_coord
+    print(new_coord)
     
     
 
