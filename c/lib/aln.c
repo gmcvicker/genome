@@ -49,17 +49,28 @@ void aln_score_matrix_free(int **score_matrix) {
 
 
 /**
- * Creates new alignment node matrix of dimension ALN_MAX_SEQ_LEN
+ * Creates new alignment node matrix with dimension n_row x n_col
  */
-AlnNode **aln_matrix_new() {
+AlnNode **aln_matrix_new(long n_row, long n_col) {
   AlnNode **matrix;
   long i, j;
 
-  matrix = my_new(AlnNode *, ALN_MAX_SEQ_LEN);
+  if(n_row < 1) {
+    my_err("%s:%d: n_row must be at least 1",
+	   __FILE__, __LINE__);
+  }
+  if(n_col < 1) {
+    my_err("%s:%d: n_col must be at least 1",
+	   __FILE__, __LINE__);
+  }
+  
+  matrix = my_new(AlnNode *, n_row);
 
-  for(i = 0; i < ALN_MAX_SEQ_LEN; i++) {
-    matrix[i] = my_new(AlnNode, ALN_MAX_SEQ_LEN);
-    for(j = 0; j < ALN_MAX_SEQ_LEN; j++) {
+  for(i = 0; i < n_row; i++) {
+    matrix[i] = my_new(AlnNode, n_col);
+    for(j = 0; j < n_col; j++) {
+      matrix[i][j].n_row = n_row;
+      matrix[i][j].n_col = n_col;
       matrix[i][j].i = i;
       matrix[i][j].j = j;
       matrix[i][j].score = ALN_UNDEF_SCORE;
@@ -74,9 +85,11 @@ AlnNode **aln_matrix_new() {
 
 
 void aln_matrix_free(AlnNode **matrix) {
-  long i;
+  long i, n_row;
 
-  for(i = 0; i < ALN_MAX_SEQ_LEN; i++) {
+  n_row = matrix[0][0].n_row;
+  
+  for(i = 0; i < n_row; i++) {
     my_free(matrix[i]);
   }
   my_free(matrix);
@@ -90,19 +103,24 @@ void aln_matrix_free(AlnNode **matrix) {
 AlnNode *aln_local(AlnNode **aln_matrix, int **score_matrix,
 		   const int gap_score, Seq *seq1, Seq *seq2) {
   long i, j;
+  long n_row;
+  long n_col;
   int mm_score;
   AlnNode *prev, *cur, *max_node;
 
+  n_row = aln_matrix[0][0].n_row;
+  n_col = aln_matrix[0][0].n_col;
+  
   /* TODO: here we could expand the alignment matrix as necessary
    * rather than giving an error
    */
-  if(seq1->len > ALN_MAX_SEQ_LEN) {
-    my_err("%s:%d: seq1 sequence length exceeds max sequence length (%d)",
-	    __FILE__, __LINE__, ALN_MAX_SEQ_LEN);
+  if(seq1->len > n_row) {
+    my_err("%s:%d: seq1 sequence length exceeds number of rows (%ld)",
+	    __FILE__, __LINE__, n_row);
   }
-  if(seq2->len > ALN_MAX_SEQ_LEN) {
-    my_err("%s:%d: seq2 sequence length exceeds max sequence length (%d)",
-	    __FILE__, __LINE__, ALN_MAX_SEQ_LEN);
+  if(seq2->len > n_col) {
+    my_err("%s:%d: seq2 sequence length exceeds numer of cols (%ld)",
+	    __FILE__, __LINE__, n_col);
   }
 
   max_node = NULL;
@@ -165,27 +183,135 @@ AlnNode *aln_local(AlnNode **aln_matrix, int **score_matrix,
 
 
 /**
- * Performs semi-global alignment, constrainted to the
+ * Performs semi-global alignment of sequence 1 against
+ * sequence 2. I.e. the full length of sequence1 must be
+ * spanned by the alignment, but not of sequence2.
+ */
+AlnNode *aln_semiglobal(AlnNode **aln_matrix, int **score_matrix,
+			 const int gap_score, Seq *seq1, Seq *seq2) {
+  long i, j;
+  long n_row;
+  long n_col;
+  int mm_score;
+  AlnNode *prev, *cur, *max_node;
+
+  n_row = aln_matrix[0][0].n_row;
+  n_col = aln_matrix[0][0].n_col;
+  
+  /* TODO: here we could expand the alignment matrix as necessary
+   * rather than giving an error
+   */
+  if(seq1->len > n_row) {
+    my_err("%s:%d: seq1 sequence length exceeds number of rows (%ld)",
+	    __FILE__, __LINE__, n_row);
+  }
+  if(seq2->len > n_col) {
+    my_err("%s:%d: seq2 sequence length exceeds numer of cols (%ld)",
+	    __FILE__, __LINE__, n_col);
+  }
+  
+  /* initialize all columns for first row, this is at beginning of seq1 
+   * and is where alignment must start
+   */
+  for(j = 0; j < seq2->len; j++) {
+    /* get match/mismatch score for this position */
+      cur = &aln_matrix[0][j];
+      mm_score = score_matrix[seq1->sym[0]][seq2->sym[j]];
+
+      cur->score    = mm_score;
+      cur->back_ptr = NULL;
+      cur->i_start  = 0;
+      cur->j_start  = j;
+      cur->path_len = 1;
+  }
+  
+  for(i = 1; i < seq1->len; i++) {
+    for(j = 0; j < seq2->len; j++) {
+      /* get match/mismatch score for this position */
+      cur = &aln_matrix[i][j];
+      mm_score = score_matrix[seq1->sym[i]][seq2->sym[j]];
+
+      /* three possible options: 
+       *   insert GAP from ABOVE,
+       *   insert GAP from LEFT,
+       *   extending from ABOVE LEFT
+       */
+
+      /* GAP from ABOVE */
+      prev = &aln_matrix[i-1][j];
+      cur->score = prev->score + gap_score + mm_score;
+
+      cur->back_ptr = prev;
+      cur->i_start  = prev->i_start;
+      cur->j_start  = prev->j_start;
+      cur->path_len = prev->path_len + 1;
+
+
+      /* does inserting GAP from LEFT give better score? */
+      if(j > 0) {
+	prev = &aln_matrix[i][j-1];	
+	if((prev->score + gap_score + mm_score) > cur->score) {
+	  cur->score    = prev->score + gap_score + mm_score;
+	  cur->back_ptr = prev;
+	  cur->i_start  = prev->i_start;
+	  cur->j_start  = prev->j_start;
+	  cur->path_len = prev->path_len + 1;
+	}
+
+	/* does extending from ABOVE, LEFT gives higher score? */
+	prev = &aln_matrix[i-1][j-1];
+	if((prev->score + mm_score) > cur->score) {
+	  cur->score    = prev->score + mm_score;
+	  cur->back_ptr = prev;
+	  cur->i_start  = prev->i_start;
+	  cur->j_start  = prev->j_start;
+	  cur->path_len = prev->path_len + 1;
+	}
+      }
+    }
+  }
+
+  /* we only set max node in last column, since alignment must
+   * extend to end of sequence 1 
+   */
+  i = seq1->len-1;
+  max_node = &aln_matrix[i][0];
+  for(j = 1; j < seq2->len; j++) {
+    cur = &aln_matrix[i][j];
+    if(cur->score > max_node->score) {
+      max_node = cur;
+    }
+  }
+
+  return max_node;
+}  
+		  
+
+
+/**
+ * Performs semi-global alignment, constrained to the
  * end of sequence 1 and the beginning of sequence 2.
  */
-AlnNode *aln_sgbl_end1_start2(AlnNode **aln_matrix, 
-			      int **score_matrix,
-			      const int gap_score,
-			      Seq *seq1, Seq *seq2) {
-  long i, j;
+AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix, 
+				    int **score_matrix,
+				    const int gap_score,
+				    Seq *seq1, Seq *seq2) {
+  long i, j, n_row, n_col;
   int new_score, max_score, mm_score;
   AlnNode *node, *max_node;
 
   /* TODO: here we could expand the alignment matrix as necessary
    * rather than giving an my_err
    */
-  if(seq1->len > ALN_MAX_SEQ_LEN) {
-    my_err("%s:%d: seq1 sequence length exceeds max sequence length (%d)",
-	    __FILE__, __LINE__, ALN_MAX_SEQ_LEN);
+  n_row = aln_matrix[0][0].n_row;
+  n_col = aln_matrix[0][0].n_col;
+  if(seq1->len > n_row) {
+    my_err("%s:%d: seq1 sequence length exceeds max sequence length (%ld)",
+	    __FILE__, __LINE__, n_row);
   }
-  if(seq2->len > ALN_MAX_SEQ_LEN) {
-    my_err("%s:%d: seq2 sequence length exceeds max sequence length (%d)",
-	    __FILE__, __LINE__, ALN_MAX_SEQ_LEN);
+  if(seq2->len > n_col) {
+    my_err("%s:%d: seq2 sequence length exceeds max sequence length (%ld)",
+	    __FILE__, __LINE__, n_col);
   }
 
   /* number read bases i, adaptor bases j */
@@ -279,25 +405,20 @@ void aln_get_nucs(AlnNode *end,
 		  unsigned char *nuc_buf1,
 		  unsigned char *nuc_buf2,
 		  unsigned char *qual_buf1,
-		  unsigned char *qual_buf2,
-		  const size_t buf_sz) {
+		  unsigned char *qual_buf2) {
   AlnNode *cur, *next;
   int idx, use_qual;
 
   /* use quality scores if quality args are not NULL */
   use_qual = qual1 && qual2 && qual_buf1 && qual_buf2;
 
-  if(buf_sz < end->path_len) {
-    my_err("%s:%d: length of alignment (%d) exceeds buffer size (%d)",
-	  __FILE__, __LINE__, end->path_len, buf_sz);
-  }
-
   idx = end->path_len - 1;
   next = end;
   cur = next->back_ptr;
 
+  
   /* fill in last pair of nucleotides as match or mismatch */
-  if(next && idx >= 0) {
+  if(next && idx >= 0) {    
     nuc_buf1[idx] = seq1->sym[next->i];
     nuc_buf2[idx] = seq2->sym[next->j];
     if(use_qual) {
@@ -349,8 +470,8 @@ void aln_get_nucs(AlnNode *end,
 
 void aln_write(FILE *f, AlnNode *end, Seq *seq1, Seq *seq2) {
   char *nuc_str1, *nuc_str2, *match_str;
-  static unsigned char aln_nuc1[ALN_MAX_SEQ_LEN];
-  static unsigned char aln_nuc2[ALN_MAX_SEQ_LEN];
+  unsigned char *aln_nuc1;
+  unsigned char *aln_nuc2;
   int i;
   
   nuc_str1 = my_new(char, end->path_len+1);
@@ -361,9 +482,14 @@ void aln_write(FILE *f, AlnNode *end, Seq *seq1, Seq *seq2) {
   nuc_str2[end->path_len] = '\0';
   match_str[end->path_len] = '\0';
 
+  /** TODO: for efficiency could change this function
+   * to take buffers, rather than re-alloc'ing mem each time
+   */
+  aln_nuc1 = my_malloc(end->path_len);
+  aln_nuc2 = my_malloc(end->path_len);
+  
   aln_get_nucs(end, seq1, seq2, NULL, NULL,
-	       aln_nuc1, aln_nuc2, NULL, NULL,
-	       ALN_MAX_SEQ_LEN);
+	       aln_nuc1, aln_nuc2, NULL, NULL);
   
   for(i = 0; i < end->path_len; i++) {
     if(aln_nuc1[i] == aln_nuc2[i] && 
@@ -378,10 +504,12 @@ void aln_write(FILE *f, AlnNode *end, Seq *seq1, Seq *seq2) {
   nuc_ids_to_str(nuc_str1, aln_nuc1, end->path_len);
   nuc_ids_to_str(nuc_str2, aln_nuc2, end->path_len);
 
-  fprintf(f, "\nALIGN: %s score=%d len=%d\n", seq1->name, 
+  fprintf(f, "ALIGN: %s score=%ld len=%ld\n", seq1->name, 
 	  end->score, end->path_len);
   fprintf(f, "%s\n%s\n%s\n\n", nuc_str1, match_str, nuc_str2);
 
+  my_free(aln_nuc1);
+  my_free(aln_nuc2);
   my_free(nuc_str1);
   my_free(nuc_str2);
 }

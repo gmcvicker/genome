@@ -8,3 +8,6 @@
 
 # Scons files
 .sconsign.dblite
+
+# emacs tmp files
+*~

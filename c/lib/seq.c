@@ -143,6 +143,50 @@ long seq_read_fasta_from_file(Seq *seq, const char *filename) {
 }
 
 
+
+
+/**
+ * Converts a sequence string to a Seq object with
+ * NUC identifier symbols instead of printable characters.
+ * Sets the coordinate start / end to 1 / seq_len. Sets 
+ * coordinate chr and seqname to NULL.
+ */
+long seq_read_seqstr(Seq *seq, char *seq_str) {
+  long seq_idx, i;
+  char c;
+
+  /* copy sequence */
+  seq_idx = 0;
+  i = 0;
+  c = seq_str[i];
+  while(c != '\0') {    
+    if(isspace(c)) {
+      /* skip whitespace */
+      continue;
+    }
+
+    if(seq_idx >= seq->buf_sz) {
+      /* expand the seq buffer */
+      seq_expand(seq);
+    }
+    seq->sym[seq_idx] = nuc_char_to_id(c);
+    seq_idx += 1;
+
+    i++;
+    c = seq_str[i];
+  }
+  seq->len = seq_idx;
+
+  seq->c.start = 1;
+  seq->c.end = seq->len;
+  seq->c.chr = NULL;
+  seq->c.seqname = NULL;
+  
+  return seq->len;
+}
+
+
+
 /**
  * Reads the next fasta record from a file into the provided sequence,
  * expanding the sequence buffer as necessary. Returns number of
@@ -197,6 +241,11 @@ long seq_read_fasta_record(Seq *seq, gzFile f) {
   
   return seq->len;
 }
+
+
+
+
+
 
 
 /**
