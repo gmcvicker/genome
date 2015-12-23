@@ -21,7 +21,7 @@ void seq_expand(Seq *seq) {
   seq->sym = realloc(seq->sym, seq->buf_sz);
 
   if(!seq->sym) {
-    my_err("%s:%d: failed to expand sequence buffer to %ld bytes", 
+    my_err("%s:%d: failed to expand sequence buffer to %ld bytes",
 	  __FILE__, __LINE__, seq->buf_sz);
   }
 }
@@ -69,7 +69,7 @@ static int read_fasta_header(Seq *seq, gzFile f) {
       my_err("%s:%d: failed to read from fasta file: %s (errnum=%d)\n",
 	     __FILE__, __LINE__, err, errnum);
     } else {
-      my_err("%s:%d: expected fasta record to start with '>' not \\%d", 
+      my_err("%s:%d: expected fasta record to start with '>' not \\%d",
 	     __FILE__, __LINE__, c);
     }
   }
@@ -131,7 +131,7 @@ void seq_read_str(Seq *seq, char *seq_str) {
 long seq_read_fasta_from_file(Seq *seq, const char *filename) {
   gzFile f;
   long seq_len;
-  
+
 
   f = util_must_gzopen(filename, "rb");
 
@@ -148,7 +148,7 @@ long seq_read_fasta_from_file(Seq *seq, const char *filename) {
 /**
  * Converts a sequence string to a Seq object with
  * NUC identifier symbols instead of printable characters.
- * Sets the coordinate start / end to 1 / seq_len. Sets 
+ * Sets the coordinate start / end to 1 / seq_len. Sets
  * coordinate chr and seqname to NULL.
  */
 long seq_read_seqstr(Seq *seq, char *seq_str) {
@@ -159,7 +159,7 @@ long seq_read_seqstr(Seq *seq, char *seq_str) {
   seq_idx = 0;
   i = 0;
   c = seq_str[i];
-  while(c != '\0') {    
+  while(c != '\0') {
     if(isspace(c)) {
       /* skip whitespace */
       continue;
@@ -181,7 +181,7 @@ long seq_read_seqstr(Seq *seq, char *seq_str) {
   seq->c.end = seq->len;
   seq->c.chr = NULL;
   seq->c.seqname = NULL;
-  
+
   return seq->len;
 }
 
@@ -198,7 +198,7 @@ long seq_read_fasta_record(Seq *seq, gzFile f) {
 
   fprintf(stderr, "reading from fasta file\n");
 
-  
+
   if(!read_fasta_header(seq, f)) {
     seq->len = 0;
     seq->c.start = 0;
@@ -238,9 +238,48 @@ long seq_read_fasta_record(Seq *seq, gzFile f) {
   seq->c.seqname = NULL;
 
   fprintf(stderr, "read %ld bp of sequence\n", seq->len);
-  
+
   return seq->len;
 }
+
+
+/**
+ * Reads all fasta records from a file and returns array of ptrs to Seq
+ * structures. The returned Seq strucures should be freed once no longer
+ * needed.
+ */
+Seq **seq_read_fasta_all(gzFile f, long *n_seq) {
+  Seq **seq_array;
+  long seq_array_sz, i;
+
+  seq_array_sz = 10;
+  seq_array = my_malloc(sizeof(Seq *) * seq_array_sz);
+
+  i = 0;
+  while(TRUE) {
+    if(i >= seq_array_sz) {
+      /* need to increase size of array */
+      seq_array_sz *= 2;
+      fprintf(stderr, "increasing seq array size to %ld\n", seq_array_sz);
+      seq_array = my_realloc(seq_array, sizeof(Seq *) * seq_array_sz);
+    }
+
+    seq_array[i] = seq_new();
+
+    if(seq_read_fasta_record(seq_array[i], f) < 0) {
+      /* reached end of file */
+      seq_free(seq_array[i]);
+      break;
+    }
+
+    i++;
+  }
+
+  *n_seq = i;
+
+  return seq_array;
+}
+
 
 
 
@@ -344,7 +383,7 @@ char *seq_get_seqstr_buf(Seq *seq, char *buf) {
  * The returned Seq should be freed when it is no longer needed by
  * using the seq_free function.
  */
-Seq *seq_subseq_coords(const Seq *seq, const SeqCoord *coords, 
+Seq *seq_subseq_coords(const Seq *seq, const SeqCoord *coords,
 		       const long n_coord) {
   long len;
   Seq *new_seq;
@@ -360,7 +399,7 @@ Seq *seq_subseq_coords(const Seq *seq, const SeqCoord *coords,
   /* figure out length of subseq and check validity of coords */
   len = 0;
   for(i = 0; i < n_coord; i++) {
-    if(coords[i].start > coords[i].end || 
+    if(coords[i].start > coords[i].end ||
        coords[i].start < seq->c.start || coords[i].end > seq->c.end) {
       my_err("%s:%d: request for bad coordinates %ld-%ld "
 	    "from seq with coordinates %ld-%ld", __FILE__, __LINE__,
@@ -373,7 +412,7 @@ Seq *seq_subseq_coords(const Seq *seq, const SeqCoord *coords,
 
     len += coords[i].end - coords[i].start + 1;
   }
-  
+
   new_seq = my_new(Seq, 1);
   new_seq->c.seqname = NULL;
   new_seq->c.start = 1;
@@ -415,7 +454,7 @@ Seq *seq_subseq_coords(const Seq *seq, const SeqCoord *coords,
 
     j += len;
   }
-  
+
   return new_seq;
 }
 
@@ -424,7 +463,7 @@ Seq *seq_subseq_coords(const Seq *seq, const SeqCoord *coords,
  * Returns an new Seq object that represents the subsequence defined
  * by the provided SeqCoord struct. If the coordinate is on the
  * reverse strand the returned sequence is the reverse complement of
- * the region. 
+ * the region.
  *
  * The coordinates of the returned sequence will be the same as those
  * requested (unlike the seq_subseq_coords function).
@@ -475,7 +514,7 @@ void seq_rev(Seq *fwd) {
 void seq_revcomp(Seq *fwd_seq) {
   seq_rev(fwd_seq);
   seq_comp(fwd_seq);
-  
+
   if(fwd_seq->c.strand == STRAND_FWD) {
     fwd_seq->c.strand = STRAND_REV;
   }
@@ -515,8 +554,8 @@ Seq *seq_dup(Seq *seq) {
 
 
 /**
- * Frees an allocated sequence structure. 
- */  
+ * Frees an allocated sequence structure.
+ */
 void seq_free(Seq *seq) {
   my_free(seq->sym);
 
@@ -529,8 +568,8 @@ void seq_free(Seq *seq) {
 
 
 /**
- * Frees an array of sequence structures. 
- */  
+ * Frees an array of sequence structures.
+ */
 void seq_array_free(Seq *seqs, long num) {
   long i;
 
