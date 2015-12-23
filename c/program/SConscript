@@ -9,6 +9,7 @@ prog = env.Program('split_wig_chrs', ['split_wig_chrs.c'])
 prog += env.Program('split_bed_chrs', ['split_bed_chrs.c'])
 prog += env.Program('smith_waterman', ['smith_waterman.c'])
 prog += env.Program('test_fasta', ['test_fasta.c'])
+prog += env.Program('test_aln', ['test_aln.c'])
 
 
 Depends(prog, libgenome)

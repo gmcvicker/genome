@@ -7,7 +7,7 @@
 #include "seq.h"
 
 
-int **aln_score_matrix_new(const int match_score, const int mismatch_score, 
+int **aln_score_matrix_new(const int match_score, const int mismatch_score,
 			   const int other_score) {
   unsigned char i, j;
   int **score_matrix;
@@ -30,7 +30,7 @@ int **aln_score_matrix_new(const int match_score, const int mismatch_score,
       }
     }
   }
-  
+
   return score_matrix;
 }
 
@@ -63,7 +63,7 @@ AlnNode **aln_matrix_new(long n_row, long n_col) {
     my_err("%s:%d: n_col must be at least 1",
 	   __FILE__, __LINE__);
   }
-  
+
   matrix = my_new(AlnNode *, n_row);
 
   for(i = 0; i < n_row; i++) {
@@ -78,7 +78,7 @@ AlnNode **aln_matrix_new(long n_row, long n_col) {
       matrix[i][j].back_ptr = NULL;
     }
   }
-  
+
   return matrix;
 }
 
@@ -88,7 +88,7 @@ void aln_matrix_free(AlnNode **matrix) {
   long i, n_row;
 
   n_row = matrix[0][0].n_row;
-  
+
   for(i = 0; i < n_row; i++) {
     my_free(matrix[i]);
   }
@@ -101,16 +101,16 @@ void aln_matrix_free(AlnNode **matrix) {
  * Performs a local aligment of the two provided sequences
  */
 AlnNode *aln_local(AlnNode **aln_matrix, int **score_matrix,
-		   const int gap_score, Seq *seq1, Seq *seq2) {
+		   int gap_open, int gap_ext, Seq *seq1, Seq *seq2) {
   long i, j;
   long n_row;
   long n_col;
-  int mm_score;
+  int mm_score, gap_score;
   AlnNode *prev, *cur, *max_node;
 
   n_row = aln_matrix[0][0].n_row;
   n_col = aln_matrix[0][0].n_col;
-  
+
   /* TODO: here we could expand the alignment matrix as necessary
    * rather than giving an error
    */
@@ -130,36 +130,51 @@ AlnNode *aln_local(AlnNode **aln_matrix, int **score_matrix,
       /* get match/mismatch score for this position */
       cur = &aln_matrix[i][j];
       mm_score = score_matrix[seq1->sym[i]][seq2->sym[j]];
+
+      /* Score for starting new local alignment at this position
+       * is just match/mistmatch score
+       */
       cur->score    = mm_score;
+      cur->type     = ALN_TYPE_MM;
       cur->back_ptr = NULL;
       cur->i_start  = i;
       cur->j_start  = j;
       cur->path_len = 1;
-      
-      /* does inserting GAP from ABOVE gives higher score? */
+
+      /* does inserting GAP from ABOVE (in seq1) give higher score? */
       if(i > 0) {
 	prev = &aln_matrix[i-1][j];
-	if((prev->score + gap_score + mm_score) > cur->score) {
-	  cur->score    = prev->score + gap_score + mm_score;
+
+	gap_score = (prev->type == ALN_TYPE_GAP1) ? gap_ext : gap_open;
+
+	if((prev->score + gap_score) > cur->score) {
+	  /* extend existing gap */
+	  cur->score    = prev->score + gap_score;
 	  cur->back_ptr = prev;
 	  cur->i_start  = prev->i_start;
 	  cur->j_start  = prev->j_start;
 	  cur->path_len = prev->path_len + 1;
+	  cur->type = ALN_TYPE_GAP1;
 	}
       }
-      
-      /* does inserting GAP from LEFT give higher score? */
+
+      /* does inserting GAP from LEFT (gap in seq2) give higher score? */
       if(j > 0) {
 	prev = &aln_matrix[i][j-1];
-	if((prev->score + gap_score + mm_score) > cur->score) {
-	  cur->score    = prev->score + gap_score + mm_score;
-	  cur->back_ptr = prev;
-	  cur->i_start  = prev->i_start;
-	  cur->j_start  = prev->j_start;
-	  cur->path_len = prev->path_len + 1;
+
+	gap_score = (prev->type == ALN_TYPE_GAP2) ? gap_ext : gap_open;
+
+	if((prev->score + gap_score) > cur->score) {
+	    /* extend existing gap */
+	    cur->score    = prev->score + gap_score;
+	    cur->back_ptr = prev;
+	    cur->i_start  = prev->i_start;
+	    cur->j_start  = prev->j_start;
+	    cur->path_len = prev->path_len + 1;
+	    cur->type     = ALN_TYPE_GAP2;
 	}
       }
-     
+
       /* does extending from ABOVE,LEFT gives higher score? */
       if(i > 0 && j > 0) {
 	prev = &aln_matrix[i-1][j-1];
@@ -169,6 +184,7 @@ AlnNode *aln_local(AlnNode **aln_matrix, int **score_matrix,
 	  cur->i_start  = prev->i_start;
 	  cur->j_start  = prev->j_start;
 	  cur->path_len = prev->path_len + 1;
+	  cur->type = ALN_TYPE_MM;
 	}
       }
 
@@ -178,7 +194,7 @@ AlnNode *aln_local(AlnNode **aln_matrix, int **score_matrix,
     }
   }
 
-  return max_node;  
+  return max_node;
 }
 
 
@@ -195,9 +211,11 @@ AlnNode *aln_semiglobal(AlnNode **aln_matrix, int **score_matrix,
   int mm_score;
   AlnNode *prev, *cur, *max_node;
 
+  /** TODO: separate GAP open / ext **/
+
   n_row = aln_matrix[0][0].n_row;
   n_col = aln_matrix[0][0].n_col;
-  
+
   /* TODO: here we could expand the alignment matrix as necessary
    * rather than giving an error
    */
@@ -209,8 +227,8 @@ AlnNode *aln_semiglobal(AlnNode **aln_matrix, int **score_matrix,
     my_err("%s:%d: seq2 sequence length exceeds numer of cols (%ld)",
 	    __FILE__, __LINE__, n_col);
   }
-  
-  /* initialize all columns for first row, this is at beginning of seq1 
+
+  /* initialize all columns for first row, this is at beginning of seq1
    * and is where alignment must start
    */
   for(j = 0; j < seq2->len; j++) {
@@ -223,15 +241,16 @@ AlnNode *aln_semiglobal(AlnNode **aln_matrix, int **score_matrix,
       cur->i_start  = 0;
       cur->j_start  = j;
       cur->path_len = 1;
+      cur->type = ALN_TYPE_MM;
   }
-  
+
   for(i = 1; i < seq1->len; i++) {
     for(j = 0; j < seq2->len; j++) {
       /* get match/mismatch score for this position */
       cur = &aln_matrix[i][j];
       mm_score = score_matrix[seq1->sym[i]][seq2->sym[j]];
 
-      /* three possible options: 
+      /* three possible options:
        *   insert GAP from ABOVE,
        *   insert GAP from LEFT,
        *   extending from ABOVE LEFT
@@ -239,23 +258,25 @@ AlnNode *aln_semiglobal(AlnNode **aln_matrix, int **score_matrix,
 
       /* GAP from ABOVE */
       prev = &aln_matrix[i-1][j];
-      cur->score = prev->score + gap_score + mm_score;
+      cur->score = prev->score + gap_score;
 
       cur->back_ptr = prev;
       cur->i_start  = prev->i_start;
       cur->j_start  = prev->j_start;
       cur->path_len = prev->path_len + 1;
+      cur->type = ALN_TYPE_GAP1;
 
 
       /* does inserting GAP from LEFT give better score? */
       if(j > 0) {
-	prev = &aln_matrix[i][j-1];	
-	if((prev->score + gap_score + mm_score) > cur->score) {
-	  cur->score    = prev->score + gap_score + mm_score;
+	prev = &aln_matrix[i][j-1];
+	if((prev->score + gap_score) > cur->score) {
+	  cur->score    = prev->score + gap_score;
 	  cur->back_ptr = prev;
 	  cur->i_start  = prev->i_start;
 	  cur->j_start  = prev->j_start;
 	  cur->path_len = prev->path_len + 1;
+	  cur->type = ALN_TYPE_GAP2;
 	}
 
 	/* does extending from ABOVE, LEFT gives higher score? */
@@ -266,13 +287,14 @@ AlnNode *aln_semiglobal(AlnNode **aln_matrix, int **score_matrix,
 	  cur->i_start  = prev->i_start;
 	  cur->j_start  = prev->j_start;
 	  cur->path_len = prev->path_len + 1;
+	  cur->type = ALN_TYPE_MM;
 	}
       }
     }
   }
 
   /* we only set max node in last column, since alignment must
-   * extend to end of sequence 1 
+   * extend to end of sequence 1
    */
   i = seq1->len-1;
   max_node = &aln_matrix[i][0];
@@ -284,15 +306,15 @@ AlnNode *aln_semiglobal(AlnNode **aln_matrix, int **score_matrix,
   }
 
   return max_node;
-}  
-		  
+}
+
 
 
 /**
  * Performs semi-global alignment, constrained to the
  * end of sequence 1 and the beginning of sequence 2.
  */
-AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix, 
+AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix,
 				    int **score_matrix,
 				    const int gap_score,
 				    Seq *seq1, Seq *seq2) {
@@ -328,7 +350,7 @@ AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix,
     aln_matrix[i][j].i_start = i;
     aln_matrix[i][j].j_start = j;
   }
-  
+
   /* currently there is just one complete alignment, so it
    * has the highest score (first adaptor base aligned
    * to last read base)
@@ -380,9 +402,9 @@ AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix,
 	node->i_start = aln_matrix[i][j-1].i_start;
 	node->j_start = aln_matrix[i][j-1].j_start;
       }
-       
+
       if(i == (seq1->len-1)) {
-	/* Last base of read, where we force alignment to end. 
+	/* Last base of read, where we force alignment to end.
 	 * Check if this is max scoring path.
 	 */
 	if(node->score > max_score) {
@@ -398,9 +420,9 @@ AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix,
 
 
 
-void aln_get_nucs(AlnNode *end, 
+void aln_get_nucs(AlnNode *end,
 		  Seq *seq1, Seq *seq2,
-		  const unsigned char *qual1, 
+		  const unsigned char *qual1,
 		  const unsigned char *qual2,
 		  unsigned char *nuc_buf1,
 		  unsigned char *nuc_buf2,
@@ -412,13 +434,56 @@ void aln_get_nucs(AlnNode *end,
   /* use quality scores if quality args are not NULL */
   use_qual = qual1 && qual2 && qual_buf1 && qual_buf2;
 
-  idx = end->path_len - 1;
+  idx = end->path_len-1;
   next = end;
   cur = next->back_ptr;
 
-  
+
+  /* move backwards through alignment filling in nucleotides */
+  while(cur != NULL) {
+    if(idx < 0) {
+      my_err("%s:%d: alignment is longer than expected", __FILE__, __LINE__);
+    }
+
+    if(cur->i < next->i) {
+      nuc_buf1[idx] = seq1->sym[next->i];
+    } else {
+      nuc_buf1[idx] = NUC_GAP;
+    }
+
+    if(cur->j < next->j) {
+      nuc_buf2[idx] = seq2->sym[next->j];
+    } else {
+      nuc_buf2[idx] = NUC_GAP;
+    }
+
+    if(use_qual) {
+      /* also track quality scores */
+      if(cur->i < next->i) {
+	qual_buf1[idx] = qual1[next->i];
+      } else {
+	qual_buf1[idx] = 0;
+      }
+
+      if(cur->j < next->j) {
+	qual_buf2[idx] = qual2[next->j];
+      } else {
+	qual_buf2[idx] = 0;
+      }
+    }
+
+    next = cur;
+    cur = cur->back_ptr;
+    idx--;
+  }
+
+  if(idx > 0) {
+    my_err("%s:%d: alignment is shorter than expected", __FILE__, __LINE__);
+  }
+  fprintf(stderr, "idx: %d\n", idx);
+
   /* fill in last pair of nucleotides as match or mismatch */
-  if(next && idx >= 0) {    
+  if(next && idx >= 0) {
     nuc_buf1[idx] = seq1->sym[next->i];
     nuc_buf2[idx] = seq2->sym[next->j];
     if(use_qual) {
@@ -427,44 +492,6 @@ void aln_get_nucs(AlnNode *end,
     }
   }
 
-  /* move backwards through alignment filling in nucleotides */
-  while(cur != NULL) {
-    idx--;
-    
-    if(idx < 0) {
-      my_err("%s:%d: alignment is longer than expected", __FILE__, __LINE__);
-    }
-
-    if(cur->i < next->i) {
-      nuc_buf1[idx] = seq1->sym[cur->i];
-    } else {
-      nuc_buf1[idx] = NUC_GAP;
-    }
-    
-    if(cur->j < next->j) {
-      nuc_buf2[idx] = seq2->sym[cur->j];
-    } else {
-      nuc_buf2[idx] = NUC_GAP;
-    }
-
-    if(use_qual) {
-      /* also track quality scores */
-      if(cur->i < next->i) {
-	qual_buf1[idx] = qual1[cur->i];
-      } else {
-	qual_buf1[idx] = 0;
-      }
-    
-      if(cur->j < next->j) {
-	qual_buf2[idx] = qual2[cur->j];
-      } else {
-	qual_buf2[idx] = 0;
-      }
-    }
-    
-    next = cur;
-    cur = cur->back_ptr;
-  }
 }
 
 
@@ -473,7 +500,7 @@ void aln_write(FILE *f, AlnNode *end, Seq *seq1, Seq *seq2) {
   unsigned char *aln_nuc1;
   unsigned char *aln_nuc2;
   int i;
-  
+
   nuc_str1 = my_new(char, end->path_len+1);
   nuc_str2 = my_new(char, end->path_len+1);
   match_str = my_new(char, end->path_len+1);
@@ -487,12 +514,12 @@ void aln_write(FILE *f, AlnNode *end, Seq *seq1, Seq *seq2) {
    */
   aln_nuc1 = my_malloc(end->path_len);
   aln_nuc2 = my_malloc(end->path_len);
-  
+
   aln_get_nucs(end, seq1, seq2, NULL, NULL,
 	       aln_nuc1, aln_nuc2, NULL, NULL);
-  
+
   for(i = 0; i < end->path_len; i++) {
-    if(aln_nuc1[i] == aln_nuc2[i] && 
+    if(aln_nuc1[i] == aln_nuc2[i] &&
        aln_nuc1[i] != NUC_GAP &&
        aln_nuc1[i] != NUC_N) {
       match_str[i] = '|';
@@ -504,7 +531,7 @@ void aln_write(FILE *f, AlnNode *end, Seq *seq1, Seq *seq2) {
   nuc_ids_to_str(nuc_str1, aln_nuc1, end->path_len);
   nuc_ids_to_str(nuc_str2, aln_nuc2, end->path_len);
 
-  fprintf(f, "ALIGN: %s score=%ld len=%ld\n", seq1->name, 
+  fprintf(f, "ALIGN: %s score=%ld len=%ld\n", seq1->name,
 	  end->score, end->path_len);
   fprintf(f, "%s\n%s\n%s\n\n", nuc_str1, match_str, nuc_str2);
 

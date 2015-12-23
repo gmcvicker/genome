@@ -6,9 +6,15 @@
 #define ALN_DEFAULT_MATCH_SCORE 1
 #define ALN_DEFAULT_MISMATCH_SCORE -1
 #define ALN_DEFAULT_OTHER_SCORE 0
-#define ALN_DEFAULT_GAP_SCORE -3
+#define ALN_DEFAULT_GAP_OPEN_SCORE -2
+#define ALN_DEFAULT_GAP_EXT_SCORE -1
 
 #define ALN_UNDEF_SCORE (-9999999)
+
+
+#define ALN_TYPE_GAP1 1 /* gap in sequence 1 */
+#define ALN_TYPE_GAP2 2 /* gap in sequence 2 */
+#define ALN_TYPE_MM 5 /* match or mismatch */
 
 typedef struct AlnNode_t AlnNode;
 
@@ -18,6 +24,8 @@ struct AlnNode_t {
   long n_row; /* total number of rows in matrix */
   long n_col; /* total number of cols in matrix */
   long score;
+
+  int type;
 
   /* length of total path */
   long path_len;
@@ -31,19 +39,19 @@ struct AlnNode_t {
 };
 
 
-AlnNode *aln_local(AlnNode **aln_matrix, 
+AlnNode *aln_local(AlnNode **aln_matrix,
 		   int **score_matrix,
-		   const int gap_score,
+		   int gap_open, int gap_ext,
 		   Seq *seq1, Seq *seq2);
 
 
-AlnNode *aln_semiglobal(AlnNode **aln_matrix, 
+AlnNode *aln_semiglobal(AlnNode **aln_matrix,
 			int **score_matrix,
 			const int gap_score,
 			Seq *seq1, Seq *seq2);
 
 
-AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix, 
+AlnNode *aln_semiglobal_end1_start2(AlnNode **aln_matrix,
 				    int **score_matrix,
 				    const int gap_score,
 				    Seq *seq1, Seq *seq2);
@@ -52,7 +60,7 @@ void aln_matrix_free(AlnNode **matrix);
 AlnNode **aln_matrix_new();
 
 
-int **aln_score_matrix_new(const int match_score, const int mismatch_score, 
+int **aln_score_matrix_new(const int match_score, const int mismatch_score,
 			   const int other_score);
 
 
