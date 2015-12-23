@@ -11,6 +11,8 @@ void *my_malloc(size_t n_bytes);
 void *my_malloc0(size_t n_bytes);
 void __MY_FREE(void *ptr, const char *filename, const int line_num);
 
+void *my_realloc(void *ptr, size_t n_bytes);
+
 #define my_new(struct_type, n) \
   ((struct_type *)my_malloc(sizeof(struct_type) * n))
 
