@@ -2,7 +2,7 @@
 import sys
 import numpy as np
 
-import genome.db
+import genome.track
 
 
 class TrackStats(object):
@@ -62,13 +62,13 @@ class TrackStats(object):
 
 
 
-def calc_stats(gdb, track):
+def calc_stats(track):
     """Calculates stats for each chromosome and the entire track,
     but does not store them."""
     
     combined = TrackStats()
 
-    for chrom in gdb.get_chromosomes():
+    for chrom in track.get_chromosomes():
         chrom_stat = TrackStats()        
         vals = track.get_nparray(chrom)
         chrom_stat.set_from_vals(vals)
@@ -78,13 +78,13 @@ def calc_stats(gdb, track):
     return combined
 
 
-def set_stats(gdb, track):
+def set_stats(track):
     """Calculates stats for each chromosome and entire track and
     stores them as attributes on the nodes. The provided track must
     be opened in append mode."""
     combined = TrackStats()
 
-    for chrom in gdb.get_all_chromosomes():
+    for chrom in track.get_all_chromosomes():
         node_name = "/%s" % chrom.name
         if node_name in track.h5f:
             chrom_stat = TrackStats()
@@ -108,7 +108,7 @@ def set_stats(gdb, track):
 
 
 
-def get_stats(gdb, track, chrom=None, verbose=False):
+def get_stats(track, chrom=None, verbose=False):
     """Retrieves stats that are stored as attributes. By default
     stats are returned for the whole track, but stats for a
     specific chromosome can also be requested"""
@@ -118,7 +118,7 @@ def get_stats(gdb, track, chrom=None, verbose=False):
     if chrom:
         chrom_list = [chrom]
     else:
-        chrom_list = [x for x in gdb.get_chromosomes(get_x=False)]
+        chrom_list = [x for x in track.get_chromosomes(get_x=False)]
     
     for chrom in chrom_list:
         node_name = "/%s" % chrom.name
