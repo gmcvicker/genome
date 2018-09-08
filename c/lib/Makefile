@@ -5,7 +5,7 @@ INCLUDE=
 
 CFLAGS=$(INCLUDE) -fPIC -Wall
 
-objects=bedgraph.o chr.o fastq.o memutil.o nuc.o seq.o seqcoord.o txtfile.o util.o wig.o
+objects=bedgraph.o chr.o err.o fastq.o memutil.o nuc.o seq.o seqcoord.o txtfile.o util.o wig.o
 
 default: all
 
