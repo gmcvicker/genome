@@ -178,7 +178,7 @@ def count_midpoints(filename, chrom_arrays, chrom_dict,
     sys.stderr.write("\n")
     sys.stderr.write("total_count: %d\n" % total_count)
 
-    for chrom_name in chrom_arrays.keys():
+    for chrom_name in list(chrom_arrays.keys()):
         carray = chrom_arrays[chrom_name]
         sys.stderr.write("%s: sites with max val (%d): %d\n" % 
                          (chrom_name, MAX_VAL, np.sum(carray[:] == MAX_VAL)))

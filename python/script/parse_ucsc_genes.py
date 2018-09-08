@@ -5,7 +5,7 @@ import argparse
 
 from genome.transcript import Transcript
 from genome.coord import Coord
-import genome.db
+
 
 GENE_TYPE_KNOWN = 1
 GENE_TYPE_ENS = 2

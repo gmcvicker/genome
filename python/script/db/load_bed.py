@@ -124,7 +124,7 @@ def create_track(gdb, chrom_dict, track_name):
     
     # create separate tables for each chromosome
     chrom_table_dict = {}
-    for chrom_name in chrom_dict.keys():
+    for chrom_name in list(chrom_dict.keys()):
         desc = track.name + " features for " + chrom_name
         chrom_tab = track.h5f.createTable("/", chrom_name, Feature, desc)
         chrom_table_dict[chrom_name] = chrom_tab
@@ -161,7 +161,7 @@ def main():
                           start_offset=options.start_offset)
 
     # flush tables
-    for tab in chrom_tab_dict.values():
+    for tab in list(chrom_tab_dict.values()):
         tab.flush()
 
     track.h5f.flush()
