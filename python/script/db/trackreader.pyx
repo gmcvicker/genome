@@ -41,22 +41,6 @@ cdef extern from "string.h":
     void memcpy(void *dest, void *src, size_t n)
 
 
-cdef extern from "xbf.h":
-    ctypedef struct xblist_t:
-        pass
-
-    xblist_t *xb_load_mmap(char *filename)
-    
-    void xb_chrom_vals(xblist_t *xbl, char *chrom_name,
-                       unsigned char **fwd_vals,
-                       unsigned char **rev_vals, long *chrom_size)
-
-    void xb_free(xblist_t *xbl)
-
-
-
-
-
 
 
 def read_wig_float32(filename, chrom_len):
@@ -108,35 +92,6 @@ def read_wig_uint8(filename, chrom_len):
     return result
 
 
-
-
-def read_xb(filename, chrom_name, strand):
-    cdef np.ndarray[np.uint8_t, ndim=1]result
-    cdef unsigned char *fwd_vals
-    cdef unsigned char *rev_vals
-    cdef long chrom_len
-    cdef xblist_t *xbl
-
-    sys.stderr.write("  memory mapping xb file\n")
-    xbl = xb_load_mmap(filename)
-
-    sys.stderr.write("  reading chromosome values from xb\n")
-    xb_chrom_vals(xbl, chrom_name, &fwd_vals, &rev_vals, &chrom_len)
-
-    result = np.empty(chrom_len, dtype=np.uint8)
-
-    if strand == "forward":
-        sys.stderr.write("  copying fwd strand data from xb\n")
-        memcpy(result.data, fwd_vals, chrom_len)
-    elif strand == "reverse":
-        sys.stderr.write("  copying rev strand data from xb\n")
-        memcpy(result.data, rev_vals, chrom_len)
-    else:
-        raise ValueError("unknown strand '%s'" % strand)
-
-    xb_free(xbl)
-
-    return result
 
 
 
@@ -253,17 +208,6 @@ def read_file(filename, chrom, dtype="float32", format="wiggle",
             raise NotImplementedError("only float32, uint8 and int16 "
                                       "datatypes are currently implemented "
                                       "for wiggle format")
-    elif format in ("xb", "xbf"):
-        if dtype != "uint8":
-            raise NotImplementedError("only uint8 dataype is currently "
-                                      "implemented for xb format")
-        vals = read_xb(filename, chrom.name, strand)
-
-        if vals.size != chrom.length:
-            raise ValueError("length of vector in xb file (%d) "
-                             "does not match chromosome length (%d)" %
-                             (vals.size, chrom.length))
-        return vals
     elif format == "fasta":
         if dtype != "uint8":
             raise NotImplementedError("only uint8 datatype is currently "

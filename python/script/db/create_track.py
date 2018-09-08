@@ -1,5 +1,4 @@
 #!/bin/env python
-
 import sys, re
 
 from argparse import ArgumentParser
@@ -8,8 +7,7 @@ from argparse import ArgumentParser
 import numpy as np
 import tables
 
-# import hdf5 database
-import genome.db
+import genome.track
 
 # trackreader contains Cython bindings to C library for
 # speedy parsing of large text files
@@ -93,14 +91,17 @@ def parse_options(args):
                         default="float32", help="datatype of values to store")
 
     parser.add_argument("-f", "--format", action="store", dest="format",
-                        choices=("fasta", "wiggle", "bedgraph", "xb", 
-                                 "txtfile"),
+                        choices=("fasta", "wiggle", "bedgraph", "txtfile"),
                         default="wiggle", help="format of input files")
 
     parser.add_argument("-a", "--assembly", default=None,
-                        help='genome assembly to create new '
+                        help='name of genome assembly to create new '
                         'track for (e.g. hg18)')
 
+    parser.add_argument("-c", "--chrom",
+                        help="path to chromInfo file containing "
+                        "names and lengths of chromosomes")
+    
     parser.add_argument("-p", "--pos_idx", action="store",
                         dest="pos_idx", type=int, default=-1,
                         help="index of position column in the "
@@ -111,16 +112,19 @@ def parse_options(args):
                         help="index of value column in the "
                         "tab- or space-delimited input txtfile")
 
-    parser.add_argument("-s", "--strand", action="store",
-                        dest="strand", default="forward",
-                        choices=("forward", "reverse"),
-                        help="strand of data to import (for xb files only)")
+    parser.add_argument("-n", "--name", action="store",
+                        dest="name", default=None,
+                        required=True, help="name of track")
 
-    parser.add_argument("track_name", action="store", nargs=1,
-                        help="name of track to store data in")
+    parser.add_argument("-s", "--desc", action="store",
+                        dest="desc", default=None,
+                        required=True, help="description of track")
     
     parser.add_argument("filename", action="store", nargs="+",
                         help="input file to read data from")
+
+    parser.add_argument("hdf5_outfile", action="store", nargs=1,
+                        help="output file to store data in")
     
     options = parser.parse_args(args)
 
@@ -136,11 +140,13 @@ def parse_options(args):
 
 
 def main(options):
-    gdb = genome.db.GenomeDB(assembly=options.assembly)
+    chrom_dict = chrom.parse_chromosomes_dict(options.chrom)
+    chrom_list = list(chrom_dict.values())
 
-    chrom_dict = gdb.get_chromosome_dict()
+    track = genome.Track(options.hdf5_outfile, mode="w",
+                         assembly=options.assembly,
+                         name=options.name, desc=options.desc)
 
-    track = gdb.create_track(options.track_name[0])
     
     if options.dtype == "float32":
         atom = tables.Float32Atom()
@@ -155,33 +161,27 @@ def main(options):
 
     for path in options.filename:
         filename = path.split("/")[-1]
+        chrom_name = extract_chrom_name(filename)
+        
+        if chrom_name not in chrom_dict:
+            raise ValueError("unknown chromosome '%s'" % chrom_name)
+        
+        chrom = chrom_dict[chrom_name]
+        sys.stderr.write(chrom_name + "\n")
 
-        if options.format in ("xb", "xbf"):
-            # all of the chromosomes are in a single file...
-            chrom_names = [chrom.name for chrom in gdb.get_chromosomes()]
-        else:
-            chrom_names = [extract_chrom_name(filename)]
-            
-        for chrom_name in chrom_names:
-            if chrom_name not in chrom_dict:
-                raise ValueError("unknown chromosome '%s'" % chrom_name)
-
-            chrom = chrom_dict[chrom_name]
-            sys.stderr.write(chrom_name + "\n")
-
-            # create a chunked array with one dimension the length
-            # of the chromosome
-            shape = [chrom.length]
-            carray = track.h5f.createCArray(track.h5f.root, chrom_name,
-                                            atom, shape, filters=ZLIB_FILTER)
-
-            # populate the array with data read from a file
-            carray[:] = trackreader.read_file(path, chrom,
-                                              dtype=options.dtype,
-                                              format=options.format,
-                                              pos_idx=options.pos_idx,
-                                              val_idx=options.val_idx,
-                                              strand=options.strand)
+        # create a chunked array with one dimension the length
+        # of the chromosome
+        shape = [chrom.length]
+        carray = track.h5f.createCArray(track.h5f.root, chrom_name,
+                                        atom, shape, filters=ZLIB_FILTER)
+        
+        # populate the array with data read from a file
+        carray[:] = trackreader.read_file(path, chrom,
+                                          dtype=options.dtype,
+                                          format=options.format,
+                                          pos_idx=options.pos_idx,
+                                          val_idx=options.val_idx,
+                                          strand=options.strand)
 
     track.close()
 

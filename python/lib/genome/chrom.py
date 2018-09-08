@@ -132,6 +132,10 @@ def parse_chromosomes(filename):
     return chrom_list
 
 
+def parse_chromosomes_dict(filename):
+    chrom_list = parse_chromosomes()
+    return dict([(chrom.name, chrom) for chrom in chrom_list])
+
 
 
 if __name__ == "__main__":
