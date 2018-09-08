@@ -2,7 +2,7 @@
 
 import sys
 
-from coord import Coord, CoordError
+from .coord import Coord, CoordError
 import genome.db
 from util import txtfile
 
@@ -426,5 +426,5 @@ if __name__ == "__main__":
     trs = read_transcripts(sys.argv[1], chrom_dict)
 
     for tr in trs:
-        print(str(tr))
+        print((str(tr)))
 

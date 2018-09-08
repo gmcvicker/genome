@@ -105,7 +105,7 @@ class Gene(coord.Coord):
                                       strand=self.strand)
                     tss_dict[tss.end] = tss
 
-        return tss_dict.values()
+        return list(tss_dict.values())
                     
 
 

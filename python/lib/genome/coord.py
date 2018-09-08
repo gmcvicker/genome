@@ -1,5 +1,5 @@
 
-from chrom import Chromosome
+from .chrom import Chromosome
 import math
 import sys
 import gzip
@@ -318,7 +318,7 @@ def get_overlaps(coords1, coords2, use_strand=False):
     s = use_strand
 
     # create list of empty lists
-    overlap_list = [[] for x in xrange(0, len(coords1))]
+    overlap_list = [[] for x in range(0, len(coords1))]
     
     # loop over both lists until the end of one of them reached
     while i < len(coords1) and j < len(coords2):
@@ -420,7 +420,7 @@ def get_np_overlaps(coords1, coords2, use_strand=False):
         compare = np_cmp
 
     # create list of empty lists
-    overlap_list = [[] for x in xrange(0, coords1.size)]
+    overlap_list = [[] for x in range(0, coords1.size)]
     
     # loop over both lists until the end of one of them reached
     while i < coords1.size and j < coords2.size:
@@ -588,26 +588,26 @@ if __name__ == "__main__":
     print("NO-STRAND SORTING:")
     sort_coords(coords, use_strand=False)
     for c in coords:
-        print("  " + str(c))
+        print(("  " + str(c)))
 
     print("overlaps:")
     overlaps = get_overlaps(coords, coords)
     for coord, ov_list in zip(coords, overlaps):
-        print("  " + str(coord) + ":")
+        print(("  " + str(coord) + ":"))
         for ov in ov_list:
-            print("    " + str(ov))
+            print(("    " + str(ov)))
 
     print("STRAND SORTING:")
     sort_coords(coords, use_strand=True)
     for c in coords:
-        print("  " + str(c))
+        print(("  " + str(c)))
 
     print("overlaps:")
     overlaps = get_overlaps(coords, coords, use_strand=True)
     for coord, ov_list in zip(coords, overlaps):
-        print("  " + str(coord) + ":")
+        print(("  " + str(coord) + ":"))
         for ov in ov_list:
-            print("    " + str(ov))
+            print(("    " + str(ov)))
 
 
     # test with a numpy array
@@ -629,7 +629,7 @@ if __name__ == "__main__":
     coords2.sort(order=('chromosome_id', 'start'))
     overlaps = get_np_overlaps(coords1, coords2, use_strand=False)
     for i in range(coords1.size):
-        print("%s:\n  %s"  % (str(coords1[i]), str(overlaps[i])))
+        print(("%s:\n  %s"  % (str(coords1[i]), str(overlaps[i]))))
     
     print("\nNUMPY ARRAY COORDS:")
     print("STRAND SORTING")
@@ -637,7 +637,7 @@ if __name__ == "__main__":
     coords2.sort(order=('chromosome_id', 'strand', 'start'))
     overlaps = get_np_overlaps(coords1, coords2, use_strand=True)
     for i in range(coords1.size):
-        print("%s:\n  %s"  % (str(coords1[i]), str(overlaps[i])))
+        print(("%s:\n  %s"  % (str(coords1[i]), str(overlaps[i]))))
 
 
     

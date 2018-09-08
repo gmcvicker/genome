@@ -144,7 +144,7 @@ class Track(object):
 
         row = meta_table.row
 
-        for k, v in meta_table.items():
+        for k, v in list(meta_table.items()):
             row['key'] = k
             row['val'] = str(v)
 
@@ -217,7 +217,7 @@ class Track(object):
                  'is_mito' :  get_mito}
 
         conditions = []
-        for k, v in flags.items():
+        for k, v in list(flags.items()):
             if not v:
                 # don't get this chromosome type
                 conditions.append("(%s == False)" % k)
@@ -290,7 +290,7 @@ class Track(object):
         chrom_name_dict = self.get_chromosome_dict()
 
         chrom_id_dict = dict([(str(c.idnum), c) for c \
-                              in chrom_name_dict.values()])
+                              in list(chrom_name_dict.values())])
 
         chrom_list = []
         for arg in args:
