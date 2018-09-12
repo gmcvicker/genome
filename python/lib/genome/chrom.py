@@ -78,9 +78,9 @@ def chrom_key(chrom):
 
 def parse_chromosomes(filename):
     if filename.endswith(".gz"):
-        f = gzip.open(filename)
+        f = gzip.open(filename, "rt")
     else:
-        f = open(filename)
+        f = open(filename, "rt")
 
     chrom_list = []
     
@@ -90,7 +90,7 @@ def parse_chromosomes(filename):
         if len(words) < 2:
             raise ValueError("expected at least two columns per line\n")
         
-        chrom = Chromosome(name=words[0], length=words[1])
+        chrom = Chromosome(name=words[0], length=int(words[1]))
         chrom_list.append(chrom)
 
         lc_name = chrom.name.lower()
@@ -125,15 +125,13 @@ def parse_chromosomes(filename):
         chrom.idnum = idnum
         idnum += 1
 
-        sys.stderr.write("%s\n" % chrom.name)
-
     f.close()
 
     return chrom_list
 
 
 def parse_chromosomes_dict(filename):
-    chrom_list = parse_chromosomes()
+    chrom_list = parse_chromosomes(filename)
     return dict([(chrom.name, chrom) for chrom in chrom_list])
 
 

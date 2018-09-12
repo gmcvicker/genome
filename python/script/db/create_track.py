@@ -3,11 +3,11 @@ import sys, re
 
 from argparse import ArgumentParser
 
-# import NumPy and PyTables
 import numpy as np
 import tables
 
 import genome.track
+import genome.chrom
 
 # trackreader contains Cython bindings to C library for
 # speedy parsing of large text files
@@ -91,14 +91,17 @@ def parse_options(args):
                         default="float32", help="datatype of values to store")
 
     parser.add_argument("-f", "--format", action="store", dest="format",
+                        required=True,
                         choices=("fasta", "wiggle", "bedgraph", "txtfile"),
                         default="wiggle", help="format of input files")
 
     parser.add_argument("-a", "--assembly", default=None,
+                        required=True,
                         help='name of genome assembly to create new '
                         'track for (e.g. hg18)')
 
-    parser.add_argument("-c", "--chrom",
+    parser.add_argument("-c", "--chrom", required=True,
+                        default=None,
                         help="path to chromInfo file containing "
                         "names and lengths of chromosomes")
     
@@ -119,12 +122,12 @@ def parse_options(args):
     parser.add_argument("-s", "--desc", action="store",
                         dest="desc", default=None,
                         required=True, help="description of track")
+
+    parser.add_argument("hdf5_outfile", action="store",
+                        help="output file to store data in")
     
     parser.add_argument("filename", action="store", nargs="+",
                         help="input file to read data from")
-
-    parser.add_argument("hdf5_outfile", action="store", nargs=1,
-                        help="output file to store data in")
     
     options = parser.parse_args(args)
 
@@ -140,12 +143,13 @@ def parse_options(args):
 
 
 def main(options):
-    chrom_dict = chrom.parse_chromosomes_dict(options.chrom)
+    chrom_dict = genome.chrom.parse_chromosomes_dict(options.chrom)
     chrom_list = list(chrom_dict.values())
 
-    track = genome.Track(options.hdf5_outfile, mode="w",
-                         assembly=options.assembly,
-                         name=options.name, desc=options.desc)
+    track = genome.track.Track(options.hdf5_outfile, mode="w",
+                               assembly=options.assembly,
+                               chromosomes=chrom_list,
+                               name=options.name, desc=options.desc)
 
     
     if options.dtype == "float32":
@@ -167,21 +171,21 @@ def main(options):
             raise ValueError("unknown chromosome '%s'" % chrom_name)
         
         chrom = chrom_dict[chrom_name]
-        sys.stderr.write(chrom_name + "\n")
+        sys.stderr.write("%s (len: %d)\n" % (chrom.name, chrom.length))
 
         # create a chunked array with one dimension the length
         # of the chromosome
         shape = [chrom.length]
         carray = track.h5f.createCArray(track.h5f.root, chrom_name,
                                         atom, shape, filters=ZLIB_FILTER)
+
         
         # populate the array with data read from a file
         carray[:] = trackreader.read_file(path, chrom,
                                           dtype=options.dtype,
                                           format=options.format,
                                           pos_idx=options.pos_idx,
-                                          val_idx=options.val_idx,
-                                          strand=options.strand)
+                                          val_idx=options.val_idx)
 
     track.close()
 

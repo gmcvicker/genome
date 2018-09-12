@@ -48,7 +48,7 @@ def read_wig_float32(filename, chrom_len):
          np.empty(chrom_len, dtype=np.float32)
     cdef float *vals
     
-    vals = wig_read_float32(filename, chrom_len)
+    vals = wig_read_float32(bytes(filename, 'utf-8'), chrom_len)
 
     if vals == NULL:
         raise Exception("could not read data from file '%s'" % filename)
@@ -64,7 +64,7 @@ def read_wig_int16(filename, chrom_len):
          np.empty(chrom_len, dtype=np.int16)
     cdef short *vals
     
-    vals = wig_read_int16(filename, chrom_len)
+    vals = wig_read_int16(bytes(filename, 'utf-8'), chrom_len)
 
     if vals == NULL:
         raise Exception("could not read data from file '%s'" % filename)
@@ -81,7 +81,7 @@ def read_wig_uint8(filename, chrom_len):
          np.empty(chrom_len, dtype=np.uint8)
     cdef unsigned char *vals
     
-    vals = wig_read_uint8(filename, chrom_len)
+    vals = wig_read_uint8(bytes(filename, 'utf-8'), chrom_len)
 
     if vals == NULL:
         raise Exception("could not read data from file '%s'" % filename)
@@ -100,7 +100,7 @@ def read_bedgraph_int16(filename, chrom_len):
          np.empty(chrom_len, dtype=np.int16)
     cdef short *vals
     
-    vals = bedgraph_read_int16(filename, chrom_len)
+    vals = bedgraph_read_int16(bytes(filename, 'utf-8'), chrom_len)
 
     if vals == NULL:
         raise IOError("could not read data from file '%s'" % filename)
@@ -117,7 +117,7 @@ def read_bedgraph_float32(filename, chrom_len):
          np.empty(chrom_len, dtype=np.float32)
     cdef float *vals
     
-    vals = bedgraph_read_float32(filename, chrom_len)
+    vals = bedgraph_read_float32(bytes(filename, 'utf-8'), chrom_len)
 
     if vals == NULL:
         raise IOError("could not read data from file '%s'" % filename)
@@ -134,7 +134,8 @@ def read_txtfile_int8(filename, chrom_len, pos_idx, val_idx):
          np.empty(chrom_len, dtype=np.int8)
     cdef char *vals
 
-    vals = txtfile_read_int8(filename, chrom_len, pos_idx, val_idx)
+    vals = txtfile_read_int8(bytes(filename, 'utf-8'), chrom_len,
+    	                     pos_idx, val_idx)
 
     if vals == NULL:
         raise Exception("could not read data from file '%s'" % filename)
@@ -150,7 +151,8 @@ def read_txtfile_int16(filename, chrom_len, pos_idx, val_idx):
          np.empty(chrom_len, dtype=np.int16)
     cdef short *vals
 
-    vals = txtfile_read_int16(filename, chrom_len, pos_idx, val_idx)
+    vals = txtfile_read_int16(bytes(filename, 'utf-8'), chrom_len,
+                              pos_idx, val_idx)
 
     if vals == NULL:
         raise Exception("could not read data from file '%s'" % filename)
@@ -190,7 +192,7 @@ def read_fasta(filename, chrom_len):
 
 
 def read_file(filename, chrom, dtype="float32", format="wiggle",
-              pos_idx=None, val_idx=None, strand="forward"):
+              pos_idx=None, val_idx=None):
     """Creates a 1D numpy array of datatype dtype and length
     chrom_len.  Values are read into the array from a file, which
     should be in the specified format (currently 'wiggle', 'bedgraph'

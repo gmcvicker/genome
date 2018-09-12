@@ -43,7 +43,7 @@ class Track(object):
         self.path = path
 
         if mode == "r":
-            self.h5f = tables.openFile(path, mode)
+            self.h5f = tables.openFile(path, "r")
         elif mode == "w":
             # creating a new file
             if os.path.exists(path):
@@ -66,7 +66,8 @@ class Track(object):
             if desc is None:
                 raise ValueError("must provide description of track "
                                  "when creating new h5f track")
-
+            
+            self.h5f = tables.openFile(path, mode)            
             self.load_chromosomes(chromosomes)
             
             #
@@ -83,16 +84,29 @@ class Track(object):
             meta_dict['date'] = datetime.datetime.now().strftime("%b %d, %Y, %H:%M")
 
             self.load_meta(meta_dict)
-            
-            self.h5f = tables.openFile(path, mode)
         
         # read meta information from meta table
         meta_dict = self.get_meta_dict()
 
         self.meta = meta_dict
-        self.assembly = meta_dict['assembly']
-        self.name = meta_dict['name']
-        self.desc = meta_dict['desc']
+
+        if 'assembly' in meta_dict:
+            self.assembly = meta_dict['assembly']
+        else:
+            sys.stderr.write("WARNING: assembly not specified in track\n")
+            self.assembly = None
+
+        if 'name' in meta_dict:
+            self.name = meta_dict['name']
+        else:
+            sys.stderr.write("WARNING: name not specified in track\n")
+            self.name = None
+
+        if 'desc' in meta_dict:
+            self.desc = meta_dict['desc']
+        else:
+            sys.stderr.write("WARNING: desc not specified in track\n")
+            self.desc = None
                 
         self._missing_chrom = set([])
 
@@ -111,10 +125,8 @@ class Track(object):
     def load_chromosomes(self, chrom_list):
         """Creates a table containing list of chromosomes and 
         their lengths"""        
-        chrom_table = track.h5f.createTable("/", 'chromosome', ChromDesc,
+        chrom_table = self.h5f.createTable("/", 'chromosome', ChromDesc,
                                             "chromosomes")
-
-        sys.stderr.write("storing chromosomes in track %s\n" % self.name)
 
         row = chrom_table.row
 
@@ -137,16 +149,15 @@ class Track(object):
 
     def load_meta(self, meta_dict):
         """creates a table containing meta data key/value pairs"""
-        meta_table = track.h5f.createTable("/", 'meta', MetaDataDesc,
-                                           "meta data")
-
-        sys.stderr.write("storing meta data in track %s\n", self.name)
+        meta_table = self.h5f.createTable("/", 'meta', MetaDataDesc,
+                                          "meta data")
 
         row = meta_table.row
 
-        for k, v in list(meta_table.items()):
+        for k, v in meta_dict.items():
             row['key'] = k
             row['val'] = str(v)
+            row.append()
 
         meta_table.flush()
 
@@ -156,7 +167,11 @@ class Track(object):
         meta_dict = {}
 
         for row in self.h5f.root.meta:
-            meta_dict[row['key']] = row['value']
+            key = row['key'].decode("utf-8")
+            val = row['val'].decode("utf-8")
+            meta_dict[key] = val
+            sys.stderr.write("%s => %s\n" % (key, val))
+
 
         return meta_dict
 
@@ -174,7 +189,7 @@ class Track(object):
         table = self.h5f.root.meta
         row = table.row
         row['key'] = key
-        row['value'] = str(val)
+        row['val'] = str(val)
         row.append()
 
         table.flush()
