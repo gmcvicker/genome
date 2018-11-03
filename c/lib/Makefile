@@ -13,7 +13,7 @@ $(objects): %.o: %.c %.h
 	$(CC) -c $(CFLAGS) $< -o $@ $(INCLUDE)
 
 libgenome.so: $(objects)
-	$(CC) -$(LIB) -shared $(objects) -o libgenome.so
+	$(CC) $(LIB) -shared $(objects) -o libgenome.so
 
 
 all: $(objects) libgenome.so
