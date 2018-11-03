@@ -126,7 +126,7 @@ def create_track(gdb, chrom_dict, track_name):
     chrom_table_dict = {}
     for chrom_name in list(chrom_dict.keys()):
         desc = track.name + " features for " + chrom_name
-        chrom_tab = track.h5f.createTable("/", chrom_name, Feature, desc)
+        chrom_tab = track.h5f.create_table("/", chrom_name, Feature, desc)
         chrom_table_dict[chrom_name] = chrom_tab
 
     return track, chrom_table_dict

@@ -145,7 +145,7 @@ def main():
                      gdb.assembly)
     track = gdb.create_track("chromosome")
 
-    chrom_table = track.h5f.createTable("/", 'chromosome', ChromDesc,
+    chrom_table = track.h5f.create_table("/", 'chromosome', ChromDesc,
                                         "chromosomes")
 
     sys.stderr.write("storing chromosomes in table\n")

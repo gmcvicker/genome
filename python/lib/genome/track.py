@@ -43,7 +43,7 @@ class Track(object):
         self.path = path
 
         if mode == "r":
-            self.h5f = tables.openFile(path, "r")
+            self.h5f = tables.open_file(path, "r")
         elif mode == "w":
             # creating a new file
             if os.path.exists(path):
@@ -67,7 +67,7 @@ class Track(object):
                 raise ValueError("must provide description of track "
                                  "when creating new h5f track")
             
-            self.h5f = tables.openFile(path, mode)            
+            self.h5f = tables.open_file(path, mode)            
             self.load_chromosomes(chromosomes)
             
             #
@@ -125,7 +125,7 @@ class Track(object):
     def load_chromosomes(self, chrom_list):
         """Creates a table containing list of chromosomes and 
         their lengths"""        
-        chrom_table = self.h5f.createTable("/", 'chromosome', ChromDesc,
+        chrom_table = self.h5f.create_table("/", 'chromosome', ChromDesc,
                                             "chromosomes")
 
         row = chrom_table.row
@@ -149,7 +149,7 @@ class Track(object):
 
     def load_meta(self, meta_dict):
         """creates a table containing meta data key/value pairs"""
-        meta_table = self.h5f.createTable("/", 'meta', MetaDataDesc,
+        meta_table = self.h5f.create_table("/", 'meta', MetaDataDesc,
                                           "meta data")
 
         row = meta_table.row
@@ -356,7 +356,7 @@ class Track(object):
         node_name = "/" + str(chrom)
 
         if node_name in self.h5f:
-            array_node = self.h5f.getNode(node_name)
+            array_node = self.h5f.get_node(node_name)
         else:
             if str(chrom) not in self._missing_chrom:
                 sys.stderr.write("WARNING: track '%s' is missing "

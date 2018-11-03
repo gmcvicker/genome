@@ -101,7 +101,7 @@ def main():
         # create a new feature table for this chromosome        
         sys.stderr.write("%s\n" % chrom.name)
         desc = track.name + " reads for " + chrom.name
-        chrom_tab = track.h5f.createTable("/", chrom.name, Feature, desc)
+        chrom_tab = track.h5f.create_table("/", chrom.name, Feature, desc)
 
         # load aligned read coordinates for each BAM file
         for filename in filenames:
