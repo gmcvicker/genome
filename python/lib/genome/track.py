@@ -4,6 +4,7 @@ import tables
 import numpy as np
 import datetime
 
+import genome.chrom
 import genome.seq
 import genome.trackstat
 
@@ -60,19 +61,17 @@ class Track(object):
                                  "when creating new h5f track")
 
             if name is None:
-                raise ValueError("must provide name of track "
-                                 "when creating new h5f track")
+                name = ""
 
             if desc is None:
-                raise ValueError("must provide description of track "
-                                 "when creating new h5f track")
+                desc = ""
             
             self.h5f = tables.open_file(path, mode)            
             self.load_chromosomes(chromosomes)
             
             #
             # load meta information into meta table
-            #            
+            #
             meta_dict = {'assembly' : assembly,
                          'name' : name,
                          'desc' : desc}
@@ -245,15 +244,15 @@ class Track(object):
             row_iter = self.h5f.root.chromosome
 
         for row in row_iter:
-            chrom = Chromosome(idnum=row['idnum'],
-                               name=row['name'],
-                               length=row['length'],
-                               is_auto=row['is_auto'],
-                               is_hap=row['is_hap'],
-                               is_mito=row['is_mito'],
-                               is_sex=row['is_sex'],
-                               is_x=row['is_x'],
-                               is_y=row['is_y'])
+            chrom = genome.chrom.Chromosome(idnum=row['idnum'],
+                                            name=row['name'].decode("utf-8"),
+                                            length=row['length'],
+                                            is_auto=row['is_auto'],
+                                            is_hap=row['is_hap'],
+                                            is_mito=row['is_mito'],
+                                            is_sex=row['is_sex'],
+                                            is_x=row['is_x'],
+                                            is_y=row['is_y'])
 
             chrom_list.append(chrom)
 
@@ -273,15 +272,15 @@ class Track(object):
                              "load_chromosomes first")
 
         for row in self.h5f.root.chromosome:
-            chrom = Chromosome(idnum=row['idnum'],
-                               name=row['name'],
-                               length=row['length'],
-                               is_auto=row['is_auto'],
-                               is_hap=row['is_hap'],
-                               is_mito=row['is_mito'],
-                               is_sex=row['is_sex'],
-                               is_x=row['is_x'],
-                               is_y=row['is_y'])
+            chrom = genome.chrom.Chromosome(idnum=row['idnum'],
+                                            name=row['name'].decode("utf-8"),
+                                            length=row['length'],
+                                            is_auto=row['is_auto'],
+                                            is_hap=row['is_hap'],
+                                            is_mito=row['is_mito'],
+                                            is_sex=row['is_sex'],
+                                            is_x=row['is_x'],
+                                            is_y=row['is_y'])
 
             chrom_list.append(chrom)
 
