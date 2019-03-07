@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 void my_err(const char *format, ...);
 void my_warn(const char *format, ...);
