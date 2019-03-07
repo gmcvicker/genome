@@ -174,7 +174,7 @@ def read_fasta(filename, chrom_len):
     seq = seq_new()
     
     sys.stderr.write("reading FASTA from file %s\n" % filename)
-    seq_len = seq_read_fasta_from_file(seq, filename)
+    seq_len = seq_read_fasta_from_file(seq, bytes(filename, "utf-8"))
 
     if seq_len != chrom_len:
         raise ValueError("expected sequence length to be %d, but "

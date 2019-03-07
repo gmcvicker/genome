@@ -29,7 +29,7 @@ def create_carray(track, chrom):
     
     # create CArray for this chromosome
     shape = [chrom.length]
-    carray = track.h5f.createCArray(track.h5f.root, chrom.name,
+    carray = track.h5f.create_carray(track.h5f.root, chrom.name,
                                     atom, shape, filters=zlib_filter)
 
     return carray
