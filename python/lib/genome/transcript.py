@@ -2,32 +2,29 @@
 
 import sys
 
-from .coord import Coord, CoordError
-import genome.db
-from util import txtfile
-
+from genome.coord import Coord, CoordError
 
 class Transcript(Coord):
-    def __init__(self, name=None, exons=[], cds_start=None,
-                 cds_end=None, idnum=None,
-                 intron_scores=None, known_intron_flags=None):
-        """Creates and initializes a new transcript object. If an exon
-        argument is provided, the coordinates of the exon are used
-        to set the transcript chr, start, end, strand and idnum."""
+    def __init__(self, chrom=None, name=None, exons=[],
+                 start=None, end=None, strand=None, id=None, gene_id=None,
+                 cds_start=None, cds_end=None):
+        """Creates and initializes a new transcript object."""
 
-        self.chrom = None
-        self.start = None
-        self.end = None
-        self.strand = None
-        self.idnum = idnum
-        self.exons = []
-        self.intron_scores = intron_scores
-        self.known_intron_flags = known_intron_flags
+        self.chrom = chrom # chromsome object
+        self.start = start # start of this transcript
+        self.end = end # end of this transcript
+        self.strand = strand # strand of this transcript
+        self.id = id # identifier (e.g. ENST identifier) for this transcript
+        self.gene_id = gene_id # id of gene this transcript associated with
+        self.exons = [] # exons for this transcript
 
         for ex in exons:
             self.add_exon(ex)
 
         self.name = name
+
+        # genomic coordinates of coding sequence start/end
+        # set to None if non-coding transcript
         self.cds_start = cds_start
         self.cds_end = cds_end
 
@@ -62,22 +59,12 @@ class Transcript(Coord):
         for exon in self.exons:
             new_exons.append(exon.copy())
 
-        if self.intron_scores is not None:
-            # create a copy of the old list
-            new_intron_scores = list(self.intron_scores)
-        else:
-            new_intron_scores = None
-
-        if self.known_intron_flags is not None:
-            intron_flags = list(self.known_intron_flags)
-        else:
-            intron_flags = None
-
-        return Transcript(name=self.name, exons=new_exons,
+        return Transcript(chrom=self.chrom, name=self.name, exons=new_exons,
+                          start=self.start, end=self.end, strand=self.strand,
+                          id=self.id, gene_id=self.gene_id,
                           cds_start=self.cds_start,
-                          cds_end=self.cds_end, idnum=self.idnum,
-                          intron_scores=new_intron_scores,
-                          known_intron_flags=intron_flags)
+                          cds_end=self.cds_end)
+                          
 
 
 
@@ -239,15 +226,6 @@ class Transcript(Coord):
             intron.exon_5p = ex1
             intron.exon_3p = ex2
             introns.append(intron)
-
-            if self.intron_scores is not None:
-                intron.score = self.intron_scores[i]
-
-            if self.known_intron_flags is not None:                
-                if self.known_intron_flags[i] == "1":
-                    intron.is_known = True
-                else:
-                    intron.is_known = False
             
         return introns
 
@@ -255,8 +233,8 @@ class Transcript(Coord):
 
     def __str__(self):
         id_str = "NA"
-        if self.idnum is not None:
-            id_str = str(self.idnum)
+        if self.id is not None:
+            id_str = self.id
         
         name_str = "NA"
         if self.name is not None:
@@ -285,34 +263,6 @@ class Transcript(Coord):
                   exon_start_str, exon_end_str, cds_start_str,
                   cds_end_str]
 
-        exon_score_strs = []
-        defined_exon_scores = False
-        for ex in self.exons:
-            if ex.score is None:
-                exon_score_strs.append("NA")
-            else:
-                defined_exon_scores = True
-                exon_score_strs.append("%.2f" % ex.score)
-
-        if defined_exon_scores:
-            fields.append(",".join(exon_score_strs))
-
-            if self.intron_scores is not None and len(self.intron_scores) > 0:
-                intron_score_strs = [str(x) for x in self.intron_scores]
-                intron_score_str = ",".join(intron_score_strs)
-            else:
-                intron_score_str = "NA"
-
-
-            if(self.known_intron_flags is not None and
-               len(self.known_intron_flags) > 0):
-                intron_flag_str = ",".join(self.known_intron_flags)
-            else:
-                intron_flag_str = "NA"
-
-            fields.append(intron_score_str)
-            fields.append(intron_flag_str)
-
         return "\t".join(fields)
 
 
@@ -333,20 +283,25 @@ class Transcript(Coord):
         if right_exon.end != self.end:
             self.end = right_exon.end
         
-
-
+#
+# TODO:
+# need to update read_transcripts so that it can read from GTF file
 def read_transcripts(path, chrom_dict):
     """Retrives all transcripts from the specified transcript file"""
 
     f = open(path, "r")
 
     transcripts = []
+
+    header = f.readline().rstrip().split()
+    row = dict([(header[x], x) for x in range(len(header))])
     
-    for row in txtfile.read_rows(f):
+    for line in f:
+        row = dict(zip(header, line.rstrip().split()))
         if row['ID'] == "NA":
             tr_id = None
         else:
-            tr_id = int(row['ID'])
+            tr_id = row['ID']
 
         if row["NAME"] == "NA":
             name = None
@@ -371,39 +326,14 @@ def read_transcripts(path, chrom_dict):
         exon_starts = [int(x) for x in row['EXON.STARTS'].split(",")]
         exon_ends = [int(x) for x in row['EXON.ENDS'].split(",")]
 
-        if "EXON.SCORES" in row:
-            exon_scores = [float(x) for x in row['EXON.SCORES'].split(",")]
-            if len(exon_scores) != len(exon_starts):
-                raise ValueError("Expected %d exon scores, got %d" %
-                                 (len(exon_starts), len(exon_scores)))
-        else:
-            exon_scores = None
-
-        if ("INTRON.SCORES" in row) and (row['INTRON.SCORES'] != 'NA'):
-            intron_scores = [float(x) for x in row['INTRON.SCORES'].split(",")]
-            if len(intron_scores) != len(exon_starts) - 1:
-                raise ValueError("Expected %d intron scores, got %d" %
-                                 (len(exon_starts)-1, len(intron_scores)))
-        else:
-            intron_scores = None
-
-        if ("KNOWN.INTRON" in row) and (row['KNOWN.INTRON'] != "NA"):
-            intron_flags = row['KNOWN.INTRON'].split(",")
-        else:
-            intron_flags = None
-
         exons = []
         for i in range(len(exon_starts)):
             exon = Coord(chrom, exon_starts[i], exon_ends[i], strand)
-            if exon_scores is not None:
-                exon.score = exon_scores[i]
             exons.append(exon)
         
         tr = Transcript(name=name, exons=exons,
                         cds_start=cds_start, cds_end=cds_end,
-                        intron_scores=intron_scores,
-                        known_intron_flags=intron_flags,
-                        idnum=tr_id)
+                        id=tr_id)
 
         transcripts.append(tr)
         
@@ -415,16 +345,17 @@ def read_transcripts(path, chrom_dict):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        sys.stderr.write("usage: %s <transcript_file>\n" % sys.argv[0])
-        exit(255)
+    pass
+    # if len(sys.argv) != 2:
+    #     sys.stderr.write("usage: %s <transcript_file>\n" % sys.argv[0])
+    #     exit(255)
 
-    with genome.db.connect(mode="r+") as gdb:
-        chrom_adp = gdb.get_adaptor("chromosome")
-        chrom_dict = chrom_adp.fetch_name_dict()
+    # with genome.db.connect(mode="r+") as gdb:
+    #     chrom_adp = gdb.get_adaptor("chromosome")
+    #     chrom_dict = chrom_adp.fetch_name_dict()
  
-    trs = read_transcripts(sys.argv[1], chrom_dict)
+    # trs = read_transcripts(sys.argv[1], chrom_dict)
 
-    for tr in trs:
-        print((str(tr)))
+    # for tr in trs:
+    #     print((str(tr)))
 
