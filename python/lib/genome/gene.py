@@ -1,15 +1,29 @@
 import sys
 
-from genome import coord
+import genome.coord
 import numpy as np
 
-class Gene(coord.Coord):
-    def __init__(self, transcripts=[], score=None, idnum=None):
-        self.chrom = None
-        self.start = None
-        self.end = None
-        self.strand = None
-        self.idnum = idnum
+class Gene(genome.coord.Coord):
+    def __init__(self, transcripts=[], chrom=None, start=None, end=None,
+                 strand=None, score=None, id=None, name=None,  biotype=None,
+                 source=None):
+        self.chrom = chrom
+        self.start = start
+        self.end = end
+        self.strand = strand
+
+        # id is something like ENSG identifer (e.g. ENSG00000223972)
+        self.id = id
+        # name is the commonly-used name of the gene (e.g. BRCA1)
+        self.name = name
+
+        # biotype describes the type of gene (e.g. pseudogene)
+        self.biotype = biotype
+
+        # source describes the source of the gene annotation
+        # (e.g. ensembl_havana)
+        self.source = source
+        
         self.score = score
         self.transcripts = []
 
@@ -53,10 +67,10 @@ class Gene(coord.Coord):
         exon_list = []
         for tr in self.transcripts:
             exon_list.extend(tr.exons)
-        coord.sort_coords(exon_list, use_strand=False)
+        genome.coord.sort_coords(exon_list, use_strand=False)
 
         # create coordinate group from first exon
-        cur_exon = coord.CoordGroup(exon_list[0])
+        cur_exon = genome.coord.CoordGroup(exon_list[0])
         merged_exons = [cur_exon]
 
         # merge overlapping exons
@@ -66,7 +80,7 @@ class Gene(coord.Coord):
                 cur_exon.add_coord(ex)
             else:
                 # new exon group
-                cur_exon = coord.CoordGroup(ex)
+                cur_exon = genome.coord.CoordGroup(ex)
                 merged_exons.append(cur_exon)
 
         return merged_exons
@@ -94,15 +108,15 @@ class Gene(coord.Coord):
                 if tr.start in tss_dict:
                     pass
                 else:
-                    tss = coord.Coord(self.chrom, tr.start, tr.start,
-                                      strand=self.strand)
+                    tss = genome.coord.Coord(self.chrom, tr.start, tr.start,
+                                             strand=self.strand)
                     tss_dict[tss.start] = tss
             else:
                 if tr.end in tss_dict:
                     pass
                 else:
-                    tss = coord.Coord(self.chrom, tr.end, tr.end,
-                                      strand=self.strand)
+                    tss = genome.coord.Coord(self.chrom, tr.end, tr.end,
+                                             strand=self.strand)
                     tss_dict[tss.end] = tss
 
         return list(tss_dict.values())
@@ -192,7 +206,7 @@ def group_transcripts(trs):
         return []
     
     # sort transcripts, and then find overlapping transcripts on same strand
-    coord.sort_coords(trs, use_strand=True)
+    genome.coord.sort_coords(trs, use_strand=True)
 
     # start first gene with first transcript
     cur_gene = Gene([trs[0]])
