@@ -326,25 +326,22 @@ def get_overlaps(coords1, coords2, use_strand=False):
         # coordinate in the second list
         while (i < len(coords1)) and \
             (not coords1[i].overlaps(coords2[j], use_strand=use_strand)) and \
-            (cmp(coords1[i].key(use_strand=s),
-                 coords2[j].key(use_strand=s)) < 0):
+            (coords1[i].key(use_strand=s) < coords2[j].key(use_strand=s)):
             i += 1
         
         # move through second list until you overlap or pass the current
         # coordinate in the first list
         while (i < len(coords1)) and (j < len(coords2)) and \
             (not coords2[j].overlaps(coords1[i], use_strand=s)) and \
-            (cmp(coords2[j].key(use_strand=s),
-                 coords1[i].key(use_strand=s)) < 0):
+            (coords2[j].key(use_strand=s) < coords1[i].key(use_strand=s)):
             j += 1
         
         # keep adding overlapping coords, but keep track of where we
         # were in read list, because same coord can overlap with many
         j_overlap = j        
         while (j_overlap < len(coords2)) and (i < len(coords1)) and \
-            (cmp(coords2[j_overlap].key(use_strand=s),
-                 coords1[i].key(use_strand=s)) < 0 or \
-             coords2[j_overlap].overlaps(coords1[i], use_strand=s)):
+            (coords2[j_overlap].key(use_strand=s) < coords1[i].key(use_strand=s)) or \
+             coords2[j_overlap].overlaps(coords1[i], use_strand=s):
 
             if coords2[j_overlap].overlaps(coords1[i], use_strand=s):
                 overlap_list[i].append(coords2[j_overlap])
