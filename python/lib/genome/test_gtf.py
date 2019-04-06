@@ -66,4 +66,31 @@ class TestGTF:
         chrom_dict = self.get_chrom_dict()
         gene_list, gene_dict = gtf.parse_gtf(gtf_filename, chrom_dict)
 
+        assert(len(gene_list) == 1)
+
+        g = gene_dict['ENSG00000186092']
+
+        assert(g.start == 69091)
+        assert(g.end == 70008)
+
+        assert(g.id == "ENSG00000186092")
+        assert(g.name == "OR4F5")
+
+        assert(g.biotype == "protein_coding")
+        assert(g.source == "ensembl_havana")
+
+        assert(len(g.transcripts) == 1)
+
+        tr = g.transcripts[0]
+        assert(tr.cds_start == 69091)
+        assert(tr.cds_end == 70005)
+
+        assert(len(tr.exons) == 1)
+        assert(tr.exons[0].start == 69091)
+        assert(tr.exons[0].end == 70008)
+
+        tr = g.transcripts[0]
+
+        ### TODO: check transcript and exons
+        
         os.unlink(gtf_filename)

@@ -163,7 +163,8 @@ def parse_gene(words, chrom):
         source = None
 
     g = genome.gene.Gene(chrom=chrom, start=start, end=end, strand=strand,
-                         score=score, id=id_str, biotype=biotype, source=source)
+                         score=score, id=id_str, name=name,
+                         biotype=biotype, source=source)
 
     return g
     
