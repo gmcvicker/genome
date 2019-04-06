@@ -64,7 +64,7 @@ class TestGTF:
         write_gtf(gtf_filename)
 
         chrom_dict = self.get_chrom_dict()
-        gene_list, gene_dict = gtf.parse_gtf(gtf_filename, chrom_dict)
+        gene_list, gene_dict, tr_list, tr_dict = gtf.parse_gtf(gtf_filename, chrom_dict)
 
         assert(len(gene_list) == 1)
 

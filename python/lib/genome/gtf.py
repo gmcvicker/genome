@@ -11,6 +11,7 @@ def parse_gtf(path, chrom_dict):
     
     gene_dict = {}
     gene_list = []
+    tr_list = []
     tr_dict = {}
 
     for line in f:
@@ -22,6 +23,8 @@ def parse_gtf(path, chrom_dict):
 
         feature_type = words[2]
         chrom = parse_chrom(words[0], chrom_dict)
+        if chrom is None:
+            continue
         
         if feature_type == "gene":
             g = parse_gene(words, chrom)
@@ -38,6 +41,7 @@ def parse_gtf(path, chrom_dict):
                 raise ValueError("Multiple transcripts with ID '%s'" %
                                  tr.id)
             tr_dict[tr.id] = tr
+            tr_list.append(tr)
 
             if tr.gene_id in gene_dict:
                 gene_dict[tr.gene_id].add_transcript(tr)
@@ -67,9 +71,9 @@ def parse_gtf(path, chrom_dict):
             # do nothing with other annotation types
             pass
 
-    # also return transcript list and transcript dict????
+    # also return transcript list and transcript dict
         
-    return gene_list, gene_dict
+    return gene_list, gene_dict, tr_list, tr_dict
             
                   
 def parse_attrib(attr_str):
@@ -93,6 +97,8 @@ def parse_attrib(attr_str):
     return attr_dict
 
 
+chrom_warns = set([])
+
 def parse_chrom(chrom_str, chrom_dict):
     # try adding "chr" to start of chromosome
     # if the name is not found
@@ -101,8 +107,14 @@ def parse_chrom(chrom_str, chrom_dict):
         if new_name in chrom_dict:
             chrom_str = new_name
         else:
-            raise genome.coord.CoordError("unknown chromosome '%s'" %
-                                          chrom_str)
+            # print at most 10 warnings about unknown chromosomes
+            if (len(chrom_warns) > 10) or chrom_str in chrom_warns:
+                pass
+            else:
+                sys.stderr.write("skipping unknown chromosome '%s'\n" % chrom_str)
+                chrom_warns.add(chrom_str)
+            return None
+            
     return chrom_dict[chrom_str]
     
 
