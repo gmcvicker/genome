@@ -97,8 +97,7 @@ def parse_options(args):
 
     parser.add_argument("-a", "--assembly", default=None,
                         required=True,
-                        help='name of genome assembly to create new '
-                        'track for (e.g. hg18)')
+                        help='genome assembly that track is on (e.g. hg19)')
 
     parser.add_argument("-c", "--chrom", required=True,
                         default=None,
@@ -117,11 +116,11 @@ def parse_options(args):
 
     parser.add_argument("-n", "--name", action="store",
                         dest="name", default=None,
-                        required=True, help="name of track")
+                        required=False, help="name of track")
 
     parser.add_argument("-s", "--desc", action="store",
-                        dest="desc", default=None,
-                        required=True, help="description of track")
+                        dest="desc", default="",
+                        required=False, help="description of track")
 
     parser.add_argument("hdf5_outfile", action="store",
                         help="output file to store data in")
@@ -137,6 +136,13 @@ def parse_options(args):
             parser.print_usage()
             parser.error("positive pos_idx and val_idx values must be "
                          "provided in order to parse txtfiles")
+
+    if options.format == "fasta":
+        if options.dtype != "uint8":
+            # only uint8 makes sense for storing DNA sequence
+            options.dtype = "uint8"
+            sys.stderr.write("using uint8 datatype for sequence data\n")
+    
 
     return options
 
@@ -176,8 +182,8 @@ def main(options):
         # create a chunked array with one dimension the length
         # of the chromosome
         shape = [chrom.length]
-        carray = track.h5f.createCArray(track.h5f.root, chrom_name,
-                                        atom, shape, filters=ZLIB_FILTER)
+        carray = track.h5f.create_carray(track.h5f.root, chrom_name,
+                                         atom, shape, filters=ZLIB_FILTER)
 
         
         # populate the array with data read from a file
