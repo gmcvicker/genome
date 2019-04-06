@@ -126,9 +126,10 @@ class Transcript(Coord):
             else:
                 if exon.end >= prev_exon.start-1:
                     raise CoordError("exon ordering or coordinates "
-                                          "are not consistant:\n"                                                            "  exon %d:%s\n  exon %d:%s" % \
-                                          (exon_num-1, str(prev_exon),
-                                           exon_num, str(exon)))
+                                     "are not consistant:\n"
+                                     "  exon %d:%s\n  exon %d:%s" % \
+                                     (exon_num-1, str(prev_exon),
+                                      exon_num, str(exon)))
 
 
     def __check_cds_coords(self):
@@ -283,63 +284,6 @@ class Transcript(Coord):
         if right_exon.end != self.end:
             self.end = right_exon.end
         
-#
-# TODO:
-# need to update read_transcripts so that it can read from GTF file
-def read_transcripts(path, chrom_dict):
-    """Retrives all transcripts from the specified transcript file"""
-
-    f = open(path, "r")
-
-    transcripts = []
-
-    header = f.readline().rstrip().split()
-    row = dict([(header[x], x) for x in range(len(header))])
-    
-    for line in f:
-        row = dict(zip(header, line.rstrip().split()))
-        if row['ID'] == "NA":
-            tr_id = None
-        else:
-            tr_id = row['ID']
-
-        if row["NAME"] == "NA":
-            name = None
-        else:
-            name = row['NAME']
-        
-        # parse CDS start/end
-        if row['CDS.START'] == 'NA':
-            cds_start = None
-        else:
-            cds_start = int(row['CDS.START'])
-
-        if row['CDS.END'] == 'NA':
-            cds_end = None
-        else:
-            cds_end = int(row['CDS.END'])
-
-        strand = int(row['STRAND'])
-        chrom = chrom_dict[row['CHROM']]
-
-        # parse exons
-        exon_starts = [int(x) for x in row['EXON.STARTS'].split(",")]
-        exon_ends = [int(x) for x in row['EXON.ENDS'].split(",")]
-
-        exons = []
-        for i in range(len(exon_starts)):
-            exon = Coord(chrom, exon_starts[i], exon_ends[i], strand)
-            exons.append(exon)
-        
-        tr = Transcript(name=name, exons=exons,
-                        cds_start=cds_start, cds_end=cds_end,
-                        id=tr_id)
-
-        transcripts.append(tr)
-        
-    f.close()
-
-    return transcripts
 
 
 
